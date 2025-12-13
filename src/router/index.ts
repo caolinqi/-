@@ -96,7 +96,7 @@ router.beforeEach((to, from, next) => {
   // If route is protected and user is NOT logged in, redirect to login
   if (!userStore.isLoggedIn) {
     message.error({
-      content: '请先登录',
+      content: '请先前往登录',
       class: 'brutalist-message'
     })
     next('/login')

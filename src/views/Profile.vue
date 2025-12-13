@@ -24,6 +24,9 @@
                           <span class="value">2025</span>
                       </div>
                       <div class="status-badge">{{ $t('profile.statusActive') }}</div>
+                      <div class="user-bio" v-if="userStore.user?.bio">
+                          "{{ userStore.user.bio }}"
+                      </div>
                   </div>
               </div>
           </div>
@@ -33,12 +36,9 @@
               <div class="card-label">{{ $t('profile.attributeAnalysis') }}</div>
               <div class="radar-wrapper">
                 <svg viewBox="0 0 100 100" class="radar-svg">
-                    <!-- Background Grid -->
                     <polygon points="50,10 90,40 75,90 25,90 10,40" class="radar-bg-grid" />
                     <polygon points="50,30 70,45 62,70 38,70 30,45" class="radar-bg-grid inner" />
-                    <!-- Data Shape -->
                     <polygon :points="radarPoints" class="radar-shape" />
-                    <!-- Axis Lines -->
                     <line x1="50" y1="50" x2="50" y2="10" class="axis-line" />
                     <line x1="50" y1="50" x2="90" y2="40" class="axis-line" />
                     <line x1="50" y1="50" x2="75" y2="90" class="axis-line" />
@@ -84,8 +84,6 @@
               <div class="badges-scroll">
                   <div v-for="badge in gameStore.earnedBadges" :key="badge.id" class="badge-item">
                       <div class="badge-icon">
-                          <!-- Use Ant Design Icons components dynamically if possible, or just emoji for now to match badges.ts icon naming implies strings -->
-                           <!-- Since badges.ts has strings like 'BuildOutlined', we might need a mapping or just show emoji. I'll use emoji based on badge ID for simplicity or just a trophy -->
                            <span v-if="badge.id.includes('novice')">🔨</span>
                            <span v-else-if="badge.id.includes('quiz')">🎓</span>
                            <span v-else-if="badge.id.includes('material')">🧱</span>
@@ -105,8 +103,8 @@
           <div class="bento-card ops-card">
               <div class="card-label">{{ $t('profile.systemOps') }}</div>
               <div class="ops-list">
-                  <button class="ops-btn">{{ $t('profile.editProfile') }}</button>
-                  <button class="ops-btn">{{ $t('profile.changePassword') }}</button>
+                  <button class="ops-btn" @click="openEditModal">{{ $t('profile.editProfile') }}</button>
+                  <button class="ops-btn" @click="openPwModal">{{ $t('profile.changePassword') }}</button>
                   <button class="ops-btn logout-btn" @click="handleLogout">{{ $t('profile.logout') }}</button>
               </div>
           </div>
@@ -114,14 +112,77 @@
       </div>
 
     </div>
+
+    <!-- MODAL: EDIT PROFILE -->
+    <div v-if="showEditModal" class="modal-overlay">
+        <div class="modal-window">
+            <div class="modal-header">
+                <h2>{{ $t('profile.editProfile') }}</h2>
+                <button class="close-btn" @click="closeEditModal">×</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label>CODENAME</label>
+                    <input v-model="editForm.name" type="text" maxlength="12" />
+                </div>
+                <!-- Avatar selection could go here but let's keep it simple for v1 style -->
+                <!-- We'll just allow basic bio editing -->
+                <div class="form-group">
+                    <label>BIO</label>
+                    <textarea v-model="editForm.bio" rows="3"></textarea>
+                </div>
+                <!-- Avatar Selection -->
+                <div class="form-group">
+                    <label>AVATAR SEED (ID)</label>
+                    <div class="avatar-input-row">
+                        <input v-model="editForm.avatarId" type="text" placeholder="Enter seed..." />
+                        <button class="random-btn" @click="editForm.avatarId = Math.random().toString(36).substring(7)">🎲</button>
+                    </div>
+                    <small style="color: #555; font-size: 0.6rem;">Changes unique visual identifier</small>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="primary-btn" @click="saveProfile">COMMIT</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL: CHANGE PASSWORD -->
+    <div v-if="showPwModal" class="modal-overlay">
+        <div class="modal-window">
+             <div class="modal-header">
+                <h2>{{ $t('profile.changePassword') }}</h2>
+                <button class="close-btn" @click="closePwModal">×</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label>CURRENT_KEY</label>
+                    <input v-model="pwForm.old" type="password" />
+                </div>
+                <div class="form-group">
+                    <label>NEW_KEY</label>
+                    <input v-model="pwForm.new" type="password" />
+                </div>
+                <div class="form-group">
+                    <label>CONFIRM_KEY</label>
+                    <input v-model="pwForm.confirm" type="password" />
+                </div>
+            </div>
+             <div class="modal-footer">
+                <button class="primary-btn" @click="savePassword">UPDATE_KEY</button>
+            </div>
+        </div>
+    </div>
+
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, reactive } from 'vue'
 import { useUserStore } from '@/stores/useUserStore'
 import { useGameStore } from '@/stores/useGameStore'
 import { useRouter } from 'vue-router'
+import { message } from 'ant-design-vue'
 
 const userStore = useUserStore()
 const gameStore = useGameStore()
@@ -130,10 +191,67 @@ const router = useRouter()
 // Mock Favorites Data
 const mockFavorites = ref([ '101', '105', '204', '330' ])
 
+// --- STATE ---
+const showEditModal = ref(false)
+const showPwModal = ref(false)
+
+const editForm = reactive({
+    name: '',
+    bio: '',
+    avatarId: ''
+})
+
+const pwForm = reactive({
+    old: '',
+    new: '',
+    confirm: ''
+})
+
+// --- ACTIONS ---
 const handleLogout = () => {
     userStore.logout()
     router.push('/login')
 }
+
+const openEditModal = () => {
+    editForm.name = userStore.user?.username || ''
+    editForm.bio = userStore.user?.bio || ''
+    editForm.avatarId = String(userStore.user?.avatarId || '')
+    showEditModal.value = true
+}
+const closeEditModal = () => showEditModal.value = false
+
+const saveProfile = () => {
+    if(!editForm.name) return message.error('Name cannot be empty')
+    
+    userStore.updateProfile({ name: editForm.name, bio: editForm.bio, avatarId: editForm.avatarId })
+    message.success('PROFILE UPDATED')
+    closeEditModal()
+}
+
+const openPwModal = () => {
+    pwForm.old = ''
+    pwForm.new = ''
+    pwForm.confirm = ''
+    showPwModal.value = true
+}
+const closePwModal = () => showPwModal.value = false
+
+const savePassword = async () => {
+    if(!pwForm.old || !pwForm.new) return message.error('Fields cannot be empty')
+    if(pwForm.new !== pwForm.confirm) return message.error('Passwords do not match')
+    
+    try {
+        await userStore.changePassword(pwForm.old, pwForm.new)
+        message.success('PASSWORD UPDATED - PLEASE RELOGIN')
+        closePwModal()
+        // Force Logout
+        handleLogout()
+    } catch(e: any) {
+        message.error(e.message || 'UPDATE FAILED')
+    }
+}
+
 
 // Radar Chart (Reused Logic)
 const radarPoints = computed(() => {
@@ -258,8 +376,17 @@ const radarPoints = computed(() => {
 
 .username {
     font-size: 2rem;
-    margin: 0 0 10px 0;
+    margin: 0 0 5px 0;
     text-transform: uppercase;
+}
+.user-bio {
+    margin-top: 10px;
+    font-size: 0.8rem;
+    color: #aaa;
+    font-style: italic;
+    border-left: 2px solid #00ffcc;
+    padding-left: 10px;
+    max-width: 300px;
 }
 
 .detail-row {
@@ -434,6 +561,86 @@ const radarPoints = computed(() => {
         margin-top: 10px;
         &:hover { background: #662222; color: #fff; }
     }
+}
+
+/* --- MODALS --- */
+.modal-overlay {
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,0.8);
+    backdrop-filter: blur(5px);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 999;
+}
+
+.modal-window {
+    width: 400px;
+    background: #0a0a0a;
+    border: 1px solid #333;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 0 30px rgba(0,0,0,0.5);
+}
+
+.modal-header {
+    background: #111;
+    padding: 15px 20px;
+    border-bottom: 1px solid #333;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    
+    h2 { margin: 0; font-size: 1rem; color: #00ffcc; letter-spacing: 1px; }
+    .close-btn { background: none; border: none; color: #fff; font-size: 1.5rem; cursor: pointer; }
+}
+
+.modal-body {
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    
+    label { font-size: 0.7rem; color: #555; }
+    input, textarea {
+        background: #111;
+        border: 1px solid #333;
+        color: #fff;
+        padding: 10px;
+        font-family: inherit;
+        &:focus { outline: none; border-color: #00ffcc; }
+    }
+}
+
+.modal-footer {
+    padding: 20px;
+    border-top: 1px solid #333;
+    text-align: right;
+}
+.avatar-input-row {
+    display: flex;
+    gap: 10px;
+    input { flex: 1; }
+    .random-btn { 
+        background: #333; color: #fff; border: 1px solid #444; cursor: pointer; padding: 0 10px;
+        &:hover { background: #444; }
+    }
+}
+
+.primary-btn {
+    background: #00ffcc;
+    color: #000;
+    font-weight: 700;
+    border: none;
+    padding: 10px 20px;
+    cursor: pointer;
+    &:hover { background: #fff; }
 }
 
 @media (max-width: 900px) {
