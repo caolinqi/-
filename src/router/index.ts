@@ -28,10 +28,10 @@ const routes: RouteRecordRaw[] = [
     meta: { title: '地图' }
   },
   {
-    path: '/tours',
-    name: 'Tours',
-    component: () => import('@/views/Tours.vue'),
-    meta: { title: '导览路线' }
+    path: '/lineage',
+    name: 'Lineage',
+    component: () => import('@/views/Lineage.vue'),
+    meta: { title: '建筑师谱系' }
   },
   {
     path: '/building/:id',

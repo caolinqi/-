@@ -28,4 +28,13 @@ export default defineConfig({
     },
   },
   base: "./",
+  server: {
+    proxy: {
+      '/api/kimi': {
+        target: 'https://api.moonshot.cn',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/api\/kimi/, '')
+      }
+    }
+  }
 });

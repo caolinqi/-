@@ -35,6 +35,37 @@ export interface Building {
   unesco?: boolean
   /** 可选：标签 */
   tags?: string[]
+  /** 可选：技术深度解析 (百科全书模式) */
+  techDetails?: {
+    background: {
+      reason: string
+      reasonEn?: string
+      context: string
+      contextEn?: string
+    }
+    features: {
+      structure: string
+      structureEn?: string
+      space: string
+      spaceEn?: string
+      materials: string
+      materialsEn?: string
+      innovation: string
+      innovationEn?: string
+    }
+    aesthetics: {
+      exterior: string
+      exteriorEn?: string
+      details: string
+      detailsEn?: string
+    }
+    significance: {
+      status: string
+      statusEn?: string
+      influence: string
+      influenceEn?: string
+    }
+  }
 }
 
 /**
@@ -54,6 +85,13 @@ export interface Architect {
   buildings: number[] // 建筑ID数组
   achievements: string[]
   achievementsJa?: string[]
+  relationships?: Relationship[]
+}
+
+export interface Relationship {
+  id: number
+  targetId: number // ID of the other architect
+  type: 'mentor' | 'student' | 'collaborator' | 'influence'
 }
 
 /**

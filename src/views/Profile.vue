@@ -15,14 +15,21 @@
                   </div>
                   <div class="user-details">
                       <h1 class="username">{{ userStore.user?.username || 'UNKNOWN' }}</h1>
-                      <div class="detail-row">
+                      <div class="user-level-row">
                           <span class="label">{{ $t('learning.level') }}:</span>
                           <span class="value">{{ gameStore.userLevel }} ({{ $t(gameStore.userTitleKey) }})</span>
                       </div>
+                      <!-- XP Progress Bar -->
+                      <div class="level-progress-container" :title="`${gameStore.currentExp % 1000} / 1000 XP`">
+                          <div class="level-progress-bar" :style="{ width: `${(gameStore.currentExp % 1000) / 10}%` }"></div>
+                      </div>
+
                       <div class="detail-row">
                           <span class="label">{{ $t('profile.memberSince') }}:</span>
                           <span class="value">2025</span>
                       </div>
+                      <div class="greeting-row">{{ greetingMessage }}</div>
+
                       <div class="status-badge">{{ $t('profile.statusActive') }}</div>
                       <div class="user-bio" v-if="userStore.user?.bio">
                           "{{ userStore.user.bio }}"
@@ -59,18 +66,19 @@
       <div class="bento-card vault-card">
           <div class="card-header-row">
               <div class="card-label">{{ $t('profile.savedBlueprints') }}</div>
-              <div class="vault-count">{{ mockFavorites.length }} {{ $t('common.items') }}</div>
+              <div class="vault-count">{{ favoriteItems.length }} {{ $t('common.items') }}</div>
           </div>
           
-          <div class="vault-grid" v-if="mockFavorites.length > 0">
-              <div v-for="id in mockFavorites" :key="id" class="blueprint-item">
+          <div class="vault-grid" v-if="favoriteItems.length > 0">
+              <div v-for="item in favoriteItems" :key="item.id" class="blueprint-item">
                   <div class="bp-icon">📐</div>
-                  <div class="bp-id">BP-{{ id }}</div>
-                  <div class="bp-name">Building {{ id }}</div>
+                  <div class="bp-id">ID-{{ item.id }}</div>
+                  <div class="bp-name">{{ item.name }}</div>
               </div>
           </div>
           <div v-else class="empty-vault">
               <p>{{ $t('profile.noFavorites') }}</p>
+              <div style="font-size: 0.8rem; margin-top: 5px; color: #444;">{{ dailyQuote }}</div>
               <router-link to="/archive" class="archive-btn">{{ $t('profile.visitArchive') }}</router-link>
           </div>
       </div>
@@ -131,14 +139,15 @@
                     <label>BIO</label>
                     <textarea v-model="editForm.bio" rows="3"></textarea>
                 </div>
-                <!-- Avatar Selection -->
-                <div class="form-group">
-                    <label>AVATAR SEED (ID)</label>
-                    <div class="avatar-input-row">
-                        <input v-model="editForm.avatarId" type="text" placeholder="Enter seed..." />
-                        <button class="random-btn" @click="editForm.avatarId = Math.random().toString(36).substring(7)">🎲</button>
+                <div class="form-group avatar-upload-group">
+                     <label>AVATAR IMAGE</label>
+                    <div class="modal-avatar-preview" @click="triggerFileInput">
+                        <img v-if="editForm.avatar || userStore.user?.avatar" :src="editForm.avatar || userStore.user?.avatar" />
+                        <div v-else class="placeholder">?</div>
+                        <div class="overlay">CHANGE IMAGE</div>
                     </div>
-                    <small style="color: #555; font-size: 0.6rem;">Changes unique visual identifier</small>
+                    <input type="file" ref="fileInput" accept="image/*" @change="handleFileChange" style="display: none" />
+                    <small style="color: #666; font-size: 0.6rem; margin-top: 5px;">Click image to upload new avatar</small>
                 </div>
             </div>
             <div class="modal-footer">
@@ -184,12 +193,36 @@ import { useGameStore } from '@/stores/useGameStore'
 import { useRouter } from 'vue-router'
 import { message } from 'ant-design-vue'
 
+import { buildings } from '@/data/buildings'
+import { architects } from '@/data/architects'
+
 const userStore = useUserStore()
 const gameStore = useGameStore()
 const router = useRouter()
 
-// Mock Favorites Data
-const mockFavorites = ref([ '101', '105', '204', '330' ])
+// --- COMPUTED FEATURES ---
+
+// Dynamic Favorites
+const favoriteItems = computed(() => {
+    return buildings.filter(b => userStore.favorites.includes(b.id))
+})
+
+// Time-based Greeting
+const greetingMessage = computed(() => {
+    const hour = new Date().getHours()
+    if(hour < 12) return 'GOOD MORNING, ARCHITECT.'
+    if(hour < 18) return 'GOOD AFTERNOON, ARCHITECT.'
+    return 'GOOD EVENING, ARCHITECT.'
+})
+
+// Daily Quote (Random)
+const dailyQuote = computed(() => {
+    // Determine a "random" index based on date so it persists for the day? 
+    // Or just random for fun on reload. Let's do random for variety.
+    const randomIndex = Math.floor(Math.random() * architects.length)
+    const architect = architects[randomIndex]
+    return `"${architect.bio}" — ${architect.name}` 
+})
 
 // --- STATE ---
 const showEditModal = ref(false)
@@ -198,8 +231,9 @@ const showPwModal = ref(false)
 const editForm = reactive({
     name: '',
     bio: '',
-    avatarId: ''
+    avatar: ''
 })
+const fileInput = ref<HTMLInputElement | null>(null)
 
 const pwForm = reactive({
     old: '',
@@ -216,15 +250,36 @@ const handleLogout = () => {
 const openEditModal = () => {
     editForm.name = userStore.user?.username || ''
     editForm.bio = userStore.user?.bio || ''
-    editForm.avatarId = String(userStore.user?.avatarId || '')
+    editForm.avatar = '' 
     showEditModal.value = true
 }
+const triggerFileInput = () => {
+    fileInput.value?.click()
+}
+const handleFileChange = (event: Event) => {
+    const target = event.target as HTMLInputElement
+    if (target.files && target.files[0]) {
+        const file = target.files[0]
+        const reader = new FileReader()
+        reader.onload = (e) => {
+            if (e.target?.result) {
+                editForm.avatar = e.target.result as string
+            }
+        }
+        reader.readAsDataURL(file)
+    }
+}
+
 const closeEditModal = () => showEditModal.value = false
 
 const saveProfile = () => {
     if(!editForm.name) return message.error('Name cannot be empty')
     
-    userStore.updateProfile({ name: editForm.name, bio: editForm.bio, avatarId: editForm.avatarId })
+    userStore.updateProfile({ 
+        name: editForm.name, 
+        bio: editForm.bio, 
+        avatar: editForm.avatar // Pass the base64 string if present
+    })
     message.success('PROFILE UPDATED')
     closeEditModal()
 }
@@ -331,7 +386,7 @@ const radarPoints = computed(() => {
     display: grid;
     grid-template-columns: 2fr 1fr; /* ID wider than Radar */
     gap: 20px;
-    height: 240px;
+    height: 300px;
 }
 
 /* ID CARD */
@@ -395,7 +450,28 @@ const radarPoints = computed(() => {
     color: #888;
     
     .label { margin-right: 10px; color: #555; }
+
     .value { color: #fff; }
+}
+
+.level-progress-container {
+    width: 100%;
+    height: 4px;
+    background: #222;
+    margin-bottom: 2px;
+    overflow: hidden;
+}
+.level-progress-bar {
+    height: 100%;
+    background: #00ffcc;
+    transition: width 0.5s ease;
+}
+
+.greeting-row {
+    font-size: 0.7rem;
+    color: #666;
+    margin-top: 5px;
+    letter-spacing: 1px;
 }
 
 .status-badge {
@@ -618,6 +694,41 @@ const radarPoints = computed(() => {
     }
 }
 
+.avatar-upload-group {
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.modal-avatar-preview {
+    width: 100px;
+    height: 100px;
+    border-radius: 50%;
+    overflow: hidden;
+    position: relative;
+    border: 2px solid #333;
+    cursor: pointer;
+    background: #000;
+    
+    img { width: 100%; height: 100%; object-fit: cover; }
+    .placeholder { 
+        width: 100%; height: 100%; 
+        display: flex; justify-content: center; align-items: center; 
+        font-size: 2rem; color: #333; 
+    }
+    
+    .overlay {
+        position: absolute; inset: 0;
+        background: rgba(0,0,0,0.6);
+        color: #fff;
+        display: flex; justify-content: center; align-items: center;
+        opacity: 0;
+        font-size: 0.8rem;
+        transition: opacity 0.2s;
+    }
+    
+    &:hover .overlay { opacity: 1; }
+}
+
 .modal-footer {
     padding: 20px;
     border-top: 1px solid #333;
@@ -642,6 +753,8 @@ const radarPoints = computed(() => {
     cursor: pointer;
     &:hover { background: #fff; }
 }
+
+
 
 @media (max-width: 900px) {
     .top-row, .bottom-row {

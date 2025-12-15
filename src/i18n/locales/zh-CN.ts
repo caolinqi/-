@@ -4,13 +4,15 @@ export default {
         timeline: '时间轴',
         architect: '建筑师',
         map: '地图',
-        favorites: '收藏',
-        archive: '档案室',
-        dialogue: '建筑对话',
+        lineage: '建筑谱系',
+        archive: '图纸档案',
+        profile: '个人中心',
+        dialogue: '人机对话',
         learning: '学习中心',
         statistics: '数据统计',
         tours: '导览路线',
-        quiz: '知识问答'
+        quiz: '知识问答',
+        favorites: '收藏'
     },
     learning: {
         title: '学习中心',
@@ -85,7 +87,31 @@ export default {
         locations: '地点',
         tracesDetected: '检测到建筑踪迹',
         viewArchive: '查看档案',
-        establishingLink: '正在建立卫星连接...'
+        establishingLink: '正在建立卫星连接...',
+        // New Field Ops Keys
+        layerOfficial: '官方站点',
+        layerCustom: '勘测记录',
+        sidebarTitle: '东京 // 勘测地图',
+        targetsDetected: '检测到目标',
+        instruction: '右键点击地图添加记录',
+        opControl: '操作控制',
+        editRecord: '编辑记录',
+        deleteSignal: '销毁信号',
+        drawerTitle: '目标情报 //',
+        modalTitleNew: '新建勘测记录',
+        modalTitleUpdate: '更下记录',
+        coordinates: '坐标',
+        name: '名称',
+        architectType: '建筑师 / 类型',
+        description: '描述 / 备注',
+        submitRegister: '注册',
+        submitUpdate: '更新',
+        confirmDeleteTitle: '确认销毁',
+        confirmDeleteContent: '确定要删除这条勘测记录吗？此信号将永久丢失。',
+        delete: '销毁',
+        profile: '档案',
+        lineage: '谱系',
+        cancel: '取消'
     },
     home: {
         title: '近代日本建筑探索馆',
@@ -166,29 +192,7 @@ export default {
         newestBuilding: '最新建筑',
         unescoCount: '世界遗产数量'
     },
-    tours: {
-        title: '虚拟导览路线',
-        subtitle: '探索精心策划的建筑之旅',
-        presetTours: '精选路线',
-        myTours: '我的路线',
-        createTour: '创建路线',
-        viewTour: '查看路线',
-        startTour: '开始导览',
-        duration: '预计时长',
-        stops: '站点',
-        difficulty: '难度',
-        easy: '简单',
-        medium: '中等',
-        hard: '困难',
-        tourList: {
-            1: { name: '世界遗产之旅', description: '探访日本最珍贵的建筑瑰宝,感受世界文化遗产的魅力' },
-            2: { name: '传统建筑探索', description: '深入了解日本传统建筑的精髓,体验古典美学' },
-            3: { name: '现代建筑巡礼', description: '领略日本现代建筑的创新与前卫,见证建筑艺术的演进' },
-            4: { name: '大师作品之旅', description: '追随建筑大师的足迹,欣赏安藤忠雄、丹下健三等人的杰作' },
-            5: { name: '东京建筑精选', description: '游览东京最具代表性的建筑,感受都市建筑的魅力' },
-            6: { name: '京都古建巡游', description: '漫步京都,探访千年古都的建筑遗产' }
-        }
-    },
+
     quiz: {
         title: '建筑知识问答',
         subtitle: '测试你的建筑知识,挑战更高分数',
@@ -340,5 +344,34 @@ export default {
         "高技派": "高技派",
         "极简主义": "极简主义",
         "城郭建筑": "城郭建筑"
+    },
+    detail: {
+        specs: '结构参数',
+        missing: '暂无详细数据',
+        actions: {
+            viewMap: '地图',
+            viewBlueprints: '查看图纸',
+            backToHome: '返回首页',
+            prev: '上一个',
+            next: '下一个'
+        },
+        sections: {
+            background: '建筑背景',
+            features: '建筑特点',
+            aesthetics: '外观与细节',
+            significance: '历史意义'
+        },
+        labels: {
+            reason: '建造原因',
+            context: '历史脉络',
+            structure: '结构系统',
+            space: '空间设计',
+            materials: '材料运用',
+            innovation: '技术创新',
+            exterior: '整体外观',
+            details: '局部细节',
+            status: '历史地位',
+            influence: '深远影响'
+        }
     }
 }

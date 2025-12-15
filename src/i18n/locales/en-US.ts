@@ -8,8 +8,9 @@ export default {
         archive: 'Archive',
         dialogue: 'Dialogue',
         statistics: 'Statistics',
-        tours: 'Tours',
-        quiz: 'Quiz',
+        tours: 'TOURS',
+        lineage: 'LINEAGE',
+        quiz: 'QUIZ',
         learning: 'Learning Center'
     },
     learning: {
@@ -71,7 +72,60 @@ export default {
         locations: 'LOCATIONS',
         tracesDetected: 'ARCH TRACES DETECTED',
         viewArchive: 'VIEW ARCHIVE',
-        establishingLink: 'ESTABLISHING SATELLITE LINK...'
+        establishingLink: 'ESTABLISHING SATELLITE LINK...',
+        // New Field Ops Keys
+        layerOfficial: 'OFFICIAL SITES',
+        layerCustom: 'FIELD RECORDS',
+        sidebarTitle: 'TOKYO // OPS-MAP',
+        targetsDetected: 'TARGETS DETECTED',
+        instruction: 'RIGHT-CLICK MAP TO ADD RECORD',
+        opControl: 'OP_CONTROL',
+        editRecord: 'EDIT RECORD',
+        deleteSignal: 'DELETE SIGNAL',
+        drawerTitle: 'TARGET_INTEL //',
+        modalTitleNew: 'NEW FIELD RECORD',
+        modalTitleUpdate: 'UPDATE RECORD',
+        coordinates: 'COORDINATES',
+        name: 'NAME',
+        architectType: 'ARCHITECT / TYPE',
+        description: 'DESCRIPTION / NOTES',
+        submitRegister: 'REGISTER',
+        submitUpdate: 'UPDATE',
+        confirmDeleteTitle: 'CONFIRM DELETION',
+        confirmDeleteContent: 'Are you sure you want to remove this Field Record? This signal will be lost forever.',
+        delete: 'DELETE',
+        profile: 'PROFILE',
+        lineage: 'LINEAGE',
+        cancel: 'CANCEL'
+    },
+    detail: {
+        specs: 'SPECIFICATIONS',
+        missing: 'DATA MISSING',
+        actions: {
+            viewMap: 'MAP',
+            viewBlueprints: 'BLUEPRINTS',
+            backToHome: 'RETURN HOME',
+            prev: 'PREV',
+            next: 'NEXT'
+        },
+        sections: {
+            background: 'BACKGROUND',
+            features: 'FEATURES',
+            aesthetics: 'AESTHETICS',
+            significance: 'SIGNIFICANCE'
+        },
+        labels: {
+            reason: 'REASON',
+            context: 'CONTEXT',
+            structure: 'STRUCTURE',
+            space: 'SPACE',
+            materials: 'MATERIALS',
+            innovation: 'INNOVATION',
+            exterior: 'EXTERIOR',
+            details: 'DETAILS',
+            status: 'STATUS',
+            influence: 'INFLUENCE'
+        }
     },
     home: {
         title: 'Modern Japanese Architecture Explorer',
@@ -151,29 +205,6 @@ export default {
         oldestBuilding: 'Oldest Building',
         newestBuilding: 'Newest Building',
         unescoCount: 'UNESCO Sites Count'
-    },
-    tours: {
-        title: 'Virtual Tours',
-        subtitle: 'Explore curated architectural routes',
-        presetTours: 'Featured Routes',
-        myTours: 'My Routes',
-        createTour: 'Create Route',
-        viewTour: 'View Route',
-        startTour: 'Start Tour',
-        duration: 'Duration',
-        stops: 'Stops',
-        difficulty: 'Difficulty',
-        easy: 'Easy',
-        medium: 'Medium',
-        hard: 'Hard',
-        tourList: {
-            1: { name: 'World Heritage Journey', description: 'Visit Japan\'s most precious architectural treasures and experience the charm of World Heritage Sites.' },
-            2: { name: 'Traditional Architecture Discovery', description: 'Deep dive into the essence of Japanese traditional architecture and experience classical aesthetics.' },
-            3: { name: 'Modern Architecture Pilgrimage', description: 'Experience the innovation and avant-garde of modern Japanese architecture and witness artistic evolution.' },
-            4: { name: 'Masters\' Works Tour', description: 'Follow in the footsteps of architectural masters and admire masterpieces by Tadao Ando, Kenzo Tange, and others.' },
-            5: { name: 'Tokyo Architecture Highlights', description: 'Tour Tokyo\'s most iconic buildings and feel the charm of urban architecture.' },
-            6: { name: 'Kyoto Ancient Architecture Tour', description: 'Stroll through Kyoto and visit the architectural heritage of the thousand-year capital.' }
-        }
     },
     quiz: {
         title: 'Architecture Quiz',

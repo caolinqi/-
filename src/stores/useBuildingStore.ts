@@ -11,12 +11,19 @@ export const useBuildingStore = defineStore("building", () => {
   const architects = ref<Architect[]>(architectsData);
   const quotes = ref<Quote[]>(quotesData);
   const favorites = ref<number[]>([]);
+  const userBuildings = ref<Building[]>([]); // New custom buildings
 
   // 从localStorage加载收藏列表
   const loadFavorites = () => {
     const saved = localStorage.getItem("japanese-architecture-favorites");
     if (saved) {
       favorites.value = JSON.parse(saved);
+    }
+
+    // Load User Buildings
+    const savedBuildings = localStorage.getItem("japanese-architecture-user-buildings");
+    if (savedBuildings) {
+      userBuildings.value = JSON.parse(savedBuildings);
     }
   };
 
@@ -47,7 +54,10 @@ export const useBuildingStore = defineStore("building", () => {
   });
 
   const buildingsByYear = computed(() => {
-    return buildings.value.sort((a, b) => a.year - b.year);
+    // Merge static and user buildings
+    const all = [...buildings.value, ...userBuildings.value];
+    // Sort Descending (Newest First)
+    return all.sort((a, b) => b.year - a.year);
   });
 
   // 方法
@@ -78,6 +88,31 @@ export const useBuildingStore = defineStore("building", () => {
     return quotes.value[randomIndex];
   };
 
+  const addBuilding = (newBuilding: Building) => {
+    // Assign a new negative ID to avoid collision with static IDs (assuming static are positive)
+    if (!newBuilding.id) {
+      newBuilding.id = -(Date.now());
+    }
+    userBuildings.value.push(newBuilding);
+    localStorage.setItem("japanese-architecture-user-buildings", JSON.stringify(userBuildings.value));
+  };
+
+  const updateBuilding = (updatedBuilding: Building) => {
+    const index = userBuildings.value.findIndex(b => b.id === updatedBuilding.id);
+    if (index !== -1) {
+      userBuildings.value[index] = updatedBuilding;
+      localStorage.setItem("japanese-architecture-user-buildings", JSON.stringify(userBuildings.value));
+    }
+  };
+
+  const deleteBuilding = (id: number) => {
+    const index = userBuildings.value.findIndex(b => b.id === id);
+    if (index !== -1) {
+      userBuildings.value.splice(index, 1);
+      localStorage.setItem("japanese-architecture-user-buildings", JSON.stringify(userBuildings.value));
+    }
+  };
+
   return {
     buildings,
     architects,
@@ -91,5 +126,10 @@ export const useBuildingStore = defineStore("building", () => {
     getBuildingById,
     getArchitectById,
     getRandomQuote,
+    addBuilding,
+    updateBuilding,
+    deleteBuilding,
+    userBuildings
   };
 });
+// End of store

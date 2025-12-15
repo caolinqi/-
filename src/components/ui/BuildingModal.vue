@@ -9,6 +9,10 @@
         <div class="header-image">
             <img :src="building.image" :alt="getLocalized(building, 'name')" />
             <div class="overlay"></div>
+            <!-- Favorite Toggle -->
+            <button class="favorite-btn" @click="handleToggleFavorite" :class="{ active: isFavorite }">
+                {{ isFavorite ? '★' : '☆' }}
+            </button>
             <div class="title-block">
                 <span class="year-badge">{{ building.year }}</span>
                 <h1 class="modal-title">{{ getLocalized(building, 'name') }}</h1>
@@ -67,6 +71,9 @@ import type { Building, Architect } from '@/types'
 import { architects } from '@/data/architects'
 import { useLocalized } from '@/composables/useLocalized'
 
+import { useUserStore } from '@/stores/useUserStore'
+import { message } from 'ant-design-vue'
+
 const props = defineProps<{
     isOpen: boolean
     building: Building | null
@@ -75,6 +82,23 @@ const props = defineProps<{
 defineEmits(['close'])
 
 const { getLocalized, getLocalizedTag } = useLocalized()
+const userStore = useUserStore()
+
+// Favorite Logic
+const isFavorite = computed(() => {
+    if (!props.building) return false
+    return userStore.favorites.includes(props.building.id)
+})
+
+const handleToggleFavorite = () => {
+    if (!props.building) return
+    userStore.toggleFavorite(props.building.id)
+    if (isFavorite.value) {
+        message.success('Added to Vault')
+    } else {
+        message.info('Removed from Vault')
+    }
+}
 
 // Look up architect by name (Assuming exact match on localized name key or ID logic would be safer but name is what we have on building)
 // Ideally building should store architectId. But currently it stores `architect` string.
@@ -163,6 +187,31 @@ const architectData = computed(() => {
         position: absolute;
         inset: 0;
         background: linear-gradient(to top, #111 0%, transparent 100%);
+    }
+}
+
+.favorite-btn {
+    position: absolute;
+    top: 20px;
+    right: 80px; /* Left of close button */
+    background: rgba(0,0,0,0.5);
+    border: 1px solid rgba(255,255,255,0.2);
+    color: #fff;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    font-size: 1.5rem;
+    cursor: pointer;
+    z-index: 10;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+    
+    &:hover, &.active {
+        background: #00ffcc;
+        color: #000;
+        border-color: #00ffcc;
     }
 }
 

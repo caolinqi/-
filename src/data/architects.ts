@@ -475,6 +475,9 @@ export const architects: Architect[] = [
         achievementsJa: [
             "2010年プリツカー賞",
             "透明性と開放性の探求"
+        ],
+        relationships: [
+            { id: 1, targetId: 14, type: 'student' } // Student of Toyo Ito
         ]
     },
     {
@@ -495,6 +498,33 @@ export const architects: Architect[] = [
         achievementsJa: [
             "オリンピック主競技場設計",
             "新和風の代表"
+        ],
+        relationships: [
+            { id: 1, targetId: 10, type: 'influence' } // Influenced by Tange
+        ]
+    },
+    {
+        id: 14,
+        name: "伊东丰雄",
+        nameEn: "Toyo Ito",
+        nameJa: "伊東豊雄",
+        birthYear: 1941,
+        bio: "流动性建筑大师，仙台媒体中心设计者，普利兹克奖得主。",
+        bioEn: "Master of fluid architecture, designer of Sendai Mediatheque, Pritzker Prize winner.",
+        bioJa: "流動的建築の巨匠、せんだいメディアテーク設計者、プリツカー賞受賞。",
+        image: "https://upload.wikimedia.org/wikipedia/commons/thumb/d/d3/Toyo_Ito_2009.jpg/640px-Toyo_Ito_2009.jpg",
+        buildings: [],
+        achievements: [
+            "普利兹克奖得主（2013）",
+            "衍生的秩序"
+        ],
+        achievementsJa: [
+            "2013年プリツカー賞",
+            "派生する秩序"
+        ],
+        relationships: [
+            { id: 1, targetId: 10, type: 'influence' }, // Influenced by Tange (Metabolism)
+            { id: 2, targetId: 12, type: 'mentor' }    // Mentor to SANAA
         ]
     }
 ]

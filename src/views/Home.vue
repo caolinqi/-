@@ -49,7 +49,7 @@
         </div>
 
         <!-- Area 5: Nav - Architects -->
-        <div class="bento-item nav-box" @click="$router.push('/architect')">
+        <div class="bento-item nav-box" @click="$router.push('/profile')">
           <UserOutlined class="nav-icon" />
           <span class="nav-text">{{ $t('nav.architects') }}</span>
         </div>
@@ -347,7 +347,7 @@ onMounted(() => {
     position: absolute;
     inset: 0;
     background-image: url('@/assets/images/tokyo_dark_map.png');
-    background-size: cover;
+    background-size: 120%;
     background-position: center;
     opacity: 0.4;
     transition: all 0.5s ease;

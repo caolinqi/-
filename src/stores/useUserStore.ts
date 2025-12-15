@@ -122,16 +122,19 @@ export const useUserStore = defineStore('user', () => {
         localStorage.removeItem('arch_user_session')
     }
 
-    const updateProfile = (data: { name?: string, bio?: string, avatarId?: string | number }) => {
+    const updateProfile = (data: { name?: string, bio?: string, avatarId?: string | number, avatar?: string }) => {
         if (!user.value) return
 
         if (data.name) user.value.username = data.name
         if (data.bio) user.value.bio = data.bio
         if (data.avatarId) user.value.avatarId = data.avatarId
 
-        // Update URL if avatar changed
-        if (user.value.username) {
-            // We use avatarId as seed if provided, else username
+        // If direct avatar string provided (e.g. Base64), use it
+        if (data.avatar) {
+            user.value.avatar = data.avatar
+        }
+        // Else if avatarId changed/exists, regenerate Dicebear URL
+        else if (data.avatarId || user.value.username) {
             const seed = data.avatarId || user.value.username
             user.value.avatar = `https://api.dicebear.com/7.x/identicon/svg?seed=${seed}`
         }
@@ -141,6 +144,10 @@ export const useUserStore = defineStore('user', () => {
         if (regIndex >= 0 && user.value) {
             registeredUsers.value[regIndex].bio = user.value.bio || ''
             registeredUsers.value[regIndex].avatarId = String(user.value.avatarId || '1')
+            // Save custom avatar if just set
+            if (data.avatar) {
+                (registeredUsers.value[regIndex] as any).avatar = user.value.avatar
+            }
             saveRegisteredUsers()
         }
 
@@ -203,7 +210,8 @@ export const useUserStore = defineStore('user', () => {
                 token: token.value,
                 user: user.value,
                 isLoggedIn: isLoggedIn.value,
-                recentActivities: recentActivities.value
+                recentActivities: recentActivities.value,
+                favorites: favorites.value
             }))
         }
     }
@@ -217,12 +225,26 @@ export const useUserStore = defineStore('user', () => {
                 user.value = data.user
                 isLoggedIn.value = data.isLoggedIn || false
                 recentActivities.value = data.recentActivities || []
+                favorites.value = data.favorites || []
             } catch (e) {
                 console.error('Failed to restore session', e)
                 logout()
             }
         }
         loadRegisteredUsers()
+    }
+
+    // Favorites
+    const favorites = ref<number[]>([])
+
+    const toggleFavorite = (id: number) => {
+        const index = favorites.value.indexOf(id)
+        if (index === -1) {
+            favorites.value.push(id)
+        } else {
+            favorites.value.splice(index, 1)
+        }
+        saveSession()
     }
 
     // Initialize
@@ -234,11 +256,13 @@ export const useUserStore = defineStore('user', () => {
         isLoggedIn,
         isLoading,
         recentActivities,
+        favorites,
         login,
         register,
         logout,
         updateProfile,
         logActivity,
-        changePassword
+        changePassword,
+        toggleFavorite
     }
 })

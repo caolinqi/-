@@ -133,6 +133,11 @@
               </div>
           </div>
 
+          <!-- 6. AI TUTOR (DEEPSEEK) (2x2) -->
+          <div class="bento-card x2-y2 ai-module" style="animation-delay: 0.6s">
+              <AITutorModule />
+          </div>
+
       </section>
 
     </div>
@@ -157,6 +162,7 @@ import { useGameStore } from '@/stores/useGameStore'
 import QuizModule from '@/components/learning/QuizModule.vue'
 import PuzzleGame from '@/components/learning/PuzzleGame.vue'
 import EyeModule from '@/components/learning/EyeModule.vue'
+import AITutorModule from '@/components/learning/AITutorModule.vue'
 import gsap from 'gsap'
 
 // Use raw requestAnimationFrame for number ticker to avoid dependency issues if gsap not present
@@ -237,11 +243,15 @@ const animatedPoints = computed(() => {
 /* --- CORE LAYOUT --- */
 .learning-dashboard {
     min-height: 100vh;
-    background: #050505;
-    color: #fff;
+    background: #030303;
+    color: #e0e0e0;
     font-family: 'JetBrains Mono', monospace;
     padding: 100px 20px 40px;
-    background-image: radial-gradient(circle at 50% 50%, #111 0%, #050505 80%);
+    background-image: 
+        radial-gradient(circle at 50% 50%, #111 0%, #030303 60%),
+        linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px);
+    background-size: 100% 100%, 40px 40px, 40px 40px;
 }
 
 .dashboard-container {
@@ -256,17 +266,18 @@ const animatedPoints = computed(() => {
     gap: 30px;
     margin-bottom: 60px;
     padding-bottom: 30px;
-    border-bottom: 1px solid #222;
+    border-bottom: 2px solid #222;
 }
 
 /* 1. HOLOGRAPHIC ID CARD */
 .holo-id-card {
-    background: rgba(255, 255, 255, 0.03);
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: rgba(10, 10, 10, 0.8);
+    border: 1px solid #333;
+    box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
     padding: 24px;
     position: relative;
     overflow: hidden;
-    backdrop-filter: blur(5px);
+    backdrop-filter: blur(10px);
     display: flex;
     flex-direction: column;
     justify-content: space-between;
@@ -277,8 +288,9 @@ const animatedPoints = computed(() => {
         top: 0; left: 0; right: 0; height: 1px;
         background: rgba(0, 255, 204, 0.5);
         box-shadow: 0 0 10px #00ffcc;
-        animation: scanline 3s linear infinite;
+        animation: scanline 4s linear infinite;
         z-index: 10;
+        opacity: 0.5;
     }
 }
 
@@ -286,69 +298,76 @@ const animatedPoints = computed(() => {
     display: flex;
     justify-content: space-between;
     font-size: 0.7rem;
-    color: #444;
+    color: #666;
     margin-bottom: 20px;
+    letter-spacing: 1px;
 }
 
 .id-body {
     display: flex;
-    gap: 20px;
+    gap: 24px;
 }
 
 .avatar-frame {
     width: 80px;
     height: 80px;
-    border: 1px solid #00ffcc;
+    border: 2px solid #444;
     display: flex;
     align-items: center;
     justify-content: center;
-    box-shadow: 0 0 15px rgba(0, 255, 204, 0.2);
+    background: #000;
     
     .avatar-placeholder {
         font-size: 2rem;
         font-weight: 800;
-        color: #00ffcc;
+        color: #fff;
     }
 }
 
 .id-info {
     flex: 1;
     .glitch-title {
-        font-size: 1.8rem;
+        font-family: 'Inter', sans-serif;
+        font-weight: 900;
+        font-size: 2rem;
         line-height: 1;
         margin: 0 0 10px;
         text-transform: uppercase;
-        position: relative;
+        color: #fff;
+        letter-spacing: -0.02em;
     }
     
     .level-indicator {
         font-size: 0.8rem;
         color: #888;
         display: flex;
-        gap: 10px;
-        .lvl-num { color: #fff; font-weight: 700; }
+        gap: 12px;
+        align-items: center;
+        .lvl-label { letter-spacing: 1px; font-size: 0.7rem; }
+        .lvl-num { color: #00ffcc; font-weight: 700; font-size: 1rem; }
     }
 }
 
 .exp-bar-wrapper {
-    margin-top: 20px;
-    height: 4px;
-    background: #222;
+    margin-top: 24px;
+    height: 6px;
+    background: #1a1a1a;
     position: relative;
+    border: 1px solid #333;
     
     .exp-fill {
         height: 100%;
-        background: #00ffcc;
-        box-shadow: 0 0 8px rgba(0, 255, 204, 0.6);
+        background: #fff;
         transition: width 0.5s ease-out;
     }
     
     .exp-text {
         position: absolute;
         right: 0;
-        top: 8px;
+        top: -18px;
         font-size: 0.7rem;
-        color: #666;
+        color: #888;
+        font-weight: bold;
     }
 }
 
@@ -356,7 +375,11 @@ const animatedPoints = computed(() => {
 .radar-hud {
     display: flex;
     align-items: center;
-    gap: 20px;
+    justify-content: center;
+    gap: 30px;
+    background: rgba(10, 10, 10, 0.5);
+    border: 1px solid #222;
+    padding: 0 20px;
 }
 
 .radar-wrapper {
@@ -367,16 +390,17 @@ const animatedPoints = computed(() => {
     .radar-svg {
         width: 100%;
         height: 100%;
+        filter: drop-shadow(0 0 5px rgba(0, 255, 204, 0.2));
         
         .radar-grid {
             fill: none;
-            stroke: #333;
+            stroke: #444;
             stroke-width: 1;
         }
         .inner { stroke-dasharray: 2 2; opacity: 0.5; }
         
         .radar-data {
-            fill: rgba(0, 255, 204, 0.2);
+            fill: rgba(0, 255, 204, 0.1);
             stroke: #00ffcc;
             stroke-width: 1.5;
             transition: all 0.3s;
@@ -388,26 +412,30 @@ const animatedPoints = computed(() => {
         inset: 0;
         border-radius: 50%;
         border: 1px solid transparent;
-        border-top-color: rgba(0, 255, 204, 0.3);
-        animation: spin 4s linear infinite;
+        border-top-color: rgba(0, 255, 204, 0.5);
+        animation: spin 3s linear infinite;
     }
 }
 
 .stat-readout {
-    font-size: 0.75rem;
-    color: #666;
+    font-size: 0.8rem;
+    color: #888;
     display: flex;
     flex-direction: column;
-    gap: 5px;
+    gap: 8px;
     
-    .stat-row { border-left: 2px solid #333; padding-left: 8px; }
+    .stat-row { 
+        border-left: 2px solid #444; 
+        padding-left: 10px; 
+        font-family: 'JetBrains Mono', monospace;
+    }
 }
 
 /* 3. SYSTEM HUD */
 .system-hud {
     border: 1px solid #222;
-    padding: 20px;
-    background: #0a0a0a;
+    padding: 24px;
+    background: rgba(10, 10, 10, 0.5);
     display: flex;
     flex-direction: column;
     justify-content: space-between;
@@ -415,51 +443,59 @@ const animatedPoints = computed(() => {
 
 .system-header {
     font-size: 0.7rem;
-    color: #444;
+    color: #666;
     letter-spacing: 2px;
-    border-bottom: 1px solid #222;
-    padding-bottom: 5px;
-    margin-bottom: 10px;
+    border-bottom: 2px solid #222;
+    padding-bottom: 10px;
+    margin-bottom: 15px;
+    font-weight: bold;
 }
 
 .status-grid {
     display: grid;
-    gap: 10px;
+    gap: 12px;
     font-size: 0.8rem;
     
     .status-item {
         display: flex;
         justify-content: space-between;
-        .label { color: #888; }
-        .value.ok { color: #00ffcc; }
+        .label { color: #555; font-weight: bold; }
+        .value.ok { color: #00ffcc; text-shadow: 0 0 5px rgba(0, 255, 204, 0.5); }
+        .value { color: #fff; }
     }
+}
+.active-badge-preview {
+    margin-top: 10px;
+    display: flex; justify-content: flex-end;
+    .badge-icon { font-size: 1.5rem; color: gold; filter: drop-shadow(0 0 5px gold); }
+    .badge-none { font-size: 0.7rem; color: #333; }
 }
 
 /* --- BENTO GRID MODULES --- */
 .modules-grid {
     display: grid;
     grid-template-columns: repeat(4, 1fr);
-    grid-auto-rows: 220px; /* Base height */
-    gap: 20px;
+    grid-auto-rows: 240px; /* Taller Base height */
+    gap: 24px;
 }
 
 .bento-card {
-    background: #0f0f0f;
+    background: #0a0a0a;
     border: 1px solid #222;
     position: relative;
     overflow: hidden;
     cursor: pointer;
-    transition: all 0.4s cubic-bezier(0.19, 1, 0.22, 1);
+    transition: all 0.3s cubic-bezier(0.19, 1, 0.22, 1);
     opacity: 0; /* For staggered entry */
     animation: slideUp 0.6s cubic-bezier(0.19, 1, 0.22, 1) forwards;
 
     &:hover:not(.locked-module) {
-        border-color: #fff;
-        transform: translateY(-5px);
-        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+        border-color: #555;
+        transform: translateY(-4px);
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.8);
         z-index: 10;
 
-        .card-bg { opacity: 0.4; transform: scale(1.05); }
+        .card-bg { opacity: 0.3; transform: scale(1.05); }
         .action-arrow { padding-left: 10px; color: #fff; }
     }
 }
@@ -475,7 +511,7 @@ const animatedPoints = computed(() => {
     position: relative;
     z-index: 2;
     height: 100%;
-    padding: 24px;
+    padding: 30px;
     display: flex;
     flex-direction: column;
     justify-content: space-between;
@@ -489,8 +525,8 @@ const animatedPoints = computed(() => {
         position: absolute;
         inset: 0;
         background: url('@/assets/images/Naiku_04.jpg') center/cover;
-        filter: grayscale(100%);
-        opacity: 0.15;
+        filter: grayscale(100%) contrast(1.2);
+        opacity: 0.1;
         transition: all 0.5s;
     }
     
@@ -498,23 +534,30 @@ const animatedPoints = computed(() => {
         display: flex;
         justify-content: space-between;
         align-items: flex-start;
-        .module-id { color: #444; font-size: 0.7rem; }
-        .icon-lg { font-size: 3rem; opacity: 0.8; }
+        .module-id { color: #555; font-size: 0.7rem; letter-spacing: 1px; font-weight: bold; border: 1px solid #333; padding: 2px 6px; }
+        .icon-lg { font-size: 3rem; opacity: 1; color: #fff; }
     }
 
     .mod-title {
-        font-size: 2rem;
-        font-weight: 800;
+        font-family: 'Inter', sans-serif;
+        font-size: 2.5rem;
+        font-weight: 900;
+        letter-spacing: -0.04em;
         margin-bottom: 10px;
         line-height: 0.9;
+        color: #fff;
     }
+    .mod-desc { color: #888; font-size: 0.9rem; max-width: 80%; }
+
     .action-btn {
         margin-top: 20px;
         background: #fff;
         color: #000;
         border: none;
-        padding: 8px 16px;
+        padding: 10px 20px;
         font-weight: 700;
+        font-family: 'JetBrains Mono', monospace;
+        letter-spacing: 1px;
         cursor: pointer;
         opacity: 0;
         transform: translateY(10px);
@@ -525,60 +568,72 @@ const animatedPoints = computed(() => {
 }
 
 .daily-module {
-    border: 1px solid #00ffcc;
+    border: 1px solid rgba(0, 255, 204, 0.3);
     background: rgba(0, 255, 204, 0.02);
     
     .daily-tag {
         background: #00ffcc;
         color: #000;
-        padding: 2px 6px;
+        padding: 4px 8px;
         font-size: 0.7rem;
-        font-weight: 800;
+        font-weight: 900;
+        text-transform: uppercase;
         margin-bottom: auto;
     }
-    .timer-display { font-size: 1.5rem; font-weight: 700; font-variant-numeric: tabular-nums; margin: 20px 0; }
-    .icon-md { font-size: 2rem; margin-bottom: 20px; }
+    .timer-display { font-size: 1.8rem; font-weight: 700; color: #fff; font-variant-numeric: tabular-nums; margin: 20px 0; }
+    .icon-md { font-size: 2rem; margin-bottom: 20px; color: #00ffcc; filter: drop-shadow(0 0 5px rgba(0,255,204,0.5)); }
     .mod-title-v {
         writing-mode: vertical-rl;
         text-orientation: mixed;
         font-size: 1.2rem;
-        letter-spacing: 4px;
+        letter-spacing: 6px;
         margin-top: auto;
+        color: #888;
+        font-weight: bold;
     }
 }
 
 .puzzle-module {
-    background: linear-gradient(90deg, #111 0%, #0a0a0a 100%);
-    .icon-md { font-size: 2.5rem; color: #666; }
-    .mod-title { font-size: 1.5rem; margin: 0; }
-    .mod-sub { color: #666; font-size: 0.8rem; }
-    .action-arrow { color: #333; font-size: 1.5rem; transition: padding 0.3s; margin-left: auto; }
+    background: linear-gradient(135deg, #111 0%, #050505 100%);
+    .icon-md { font-size: 3rem; color: #333; transition: color 0.3s; }
+    .text-group { flex: 1; margin-left: 20px; }
+    .mod-title { font-size: 1.5rem; margin: 0; font-weight: 800; }
+    .mod-sub { color: #555; font-size: 0.8rem; }
+    .action-arrow { color: #333; font-size: 1.5rem; transition: all 0.3s; margin-left: auto; }
+    
+    &:hover {
+        .icon-md { color: #fff; }
+        .action-arrow { color: #fff; padding-left: 10px; }
+    }
 }
 
 .locked-module {
-    opacity: 0.5;
+    opacity: 0.6;
     cursor: not-allowed;
-    background: repeating-linear-gradient(45deg, #0a0a0a, #0a0a0a 10px, #111 10px, #111 20px);
+    background: repeating-linear-gradient(45deg, #050505, #050505 10px, #0a0a0a 10px, #0a0a0a 20px);
+    border: 1px solid #1a1a1a;
     
     .lock-overlay {
         position: absolute;
-        top: 10px; right: 10px;
+        top: 15px; right: 15px;
         background: #000;
         border: 1px solid #333;
         padding: 4px 8px;
         font-size: 0.7rem;
-        color: #888;
+        color: #555;
+        font-weight: bold;
     }
-    .icon-sm { font-size: 2rem; margin-bottom: 10px; filter: blur(1px); }
-    .mod-title-xs { font-size: 0.9rem; color: #666; }
+    .icon-sm { font-size: 2.5rem; margin-bottom: 10px; opacity: 0.3; }
+    .mod-title-xs { font-size: 0.9rem; color: #444; font-weight: bold;}
 }
 
 
 /* --- ANIMATIONS --- */
 @keyframes scanline {
-    0% { top: -10%; opacity: 0; }
-    50% { opacity: 1; }
-    100% { top: 110%; opacity: 0; }
+    0% { top: -20%; opacity: 0; }
+    20% { opacity: 1; }
+    80% { opacity: 1; }
+    100% { top: 120%; opacity: 0; }
 }
 
 @keyframes spin {
@@ -586,7 +641,7 @@ const animatedPoints = computed(() => {
 }
 
 @keyframes slideUp {
-    from { transform: translateY(50px); opacity: 0; }
+    from { transform: translateY(60px); opacity: 0; }
     to { transform: translateY(0); opacity: 1; }
 }
 
@@ -595,42 +650,48 @@ const animatedPoints = computed(() => {
     position: fixed;
     inset: 0;
     background: rgba(0,0,0,0.9);
-    z-index: 999;
+    z-index: 2000;
     display: flex;
     justify-content: center;
     align-items: center;
-    backdrop-filter: blur(10px);
+    backdrop-filter: blur(16px);
 }
 
 .module-window {
     width: 100%;
     height: 100%;
     position: relative;
-    background: #000;
+    background: #050505;
 }
 
 .win-close-btn {
     position: absolute;
-    top: 20px; right: 30px;
+    top: 30px; right: 40px;
     background: none;
-    border: none;
+    border: 1px solid #333;
+    padding: 10px 20px;
     color: #fff;
-    font-size: 2rem;
+    font-size: 1rem;
+    font-family: 'JetBrains Mono', monospace;
     cursor: pointer;
     z-index: 1000;
-    &:hover { color: #ff4d4f; }
+    transition: all 0.2s;
+    &:hover { background: #fff; color: #000; }
 }
 
-.modal-fade-enter-active, .modal-fade-leave-active { transition: opacity 0.3s; }
+.modal-fade-enter-active, .modal-fade-leave-active { transition: opacity 0.4s; }
 .modal-fade-enter-from, .modal-fade-leave-to { opacity: 0; }
 
 /* RESPONSIVE */
 @media (max-width: 1024px) {
-    .modules-grid { grid-template-columns: repeat(2, 1fr); }
-    .hud-section { grid-template-columns: 1fr; }
+    .modules-grid { grid-template-columns: repeat(2, 1fr); gap: 15px; }
+    .hud-section { grid-template-columns: 1fr; gap: 20px; }
+    .learning-dashboard { padding: 80px 15px 30px; }
 }
 @media (max-width: 600px) {
     .modules-grid { grid-template-columns: 1fr; }
-    .bento-card { grid-column: span 1 !important; grid-row: span 1 !important; }
+    .bento-card { grid-column: span 1 !important; grid-row: span 1 !important; min-height: 200px; }
+    .id-body { gap: 15px; } 
+    .radar-hud, .system-hud { display: none; } /* Focus on content on mobile */
 }
 </style>

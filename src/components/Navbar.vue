@@ -1,5 +1,5 @@
 <template>
-  <nav class="navbar" :class="{ 'navbar-scrolled': isScrolled }">
+  <nav class="navbar" :class="{ 'navbar-visible': isVisible, 'navbar-scrolled': isScrolled }">
     <div class="navbar-container">
       
       <!-- LOGO -->
@@ -48,6 +48,7 @@ import { useUserStore } from '@/stores/useUserStore'
 const userStore = useUserStore()
 const router = useRouter()
 const isScrolled = ref(false)
+const isVisible = ref(true)
 
 const handleLogout = () => {
     userStore.logout()
@@ -59,11 +60,12 @@ const navLinks = [
   { path: '/timeline', labelKey: 'nav.timeline' },
 
   { path: '/map', labelKey: 'nav.map' },
+  { path: '/lineage', labelKey: 'nav.lineage' },
   { path: '/archive', labelKey: 'nav.archive' },
 
   { path: '/dialogue', labelKey: 'nav.dialogue' },
   { path: '/learning', labelKey: 'nav.learning' },
-  { path: '/tours', labelKey: 'nav.tours' },
+
   // Statistics and Quiz removed
 ]
 
@@ -71,12 +73,29 @@ const handleScroll = () => {
   isScrolled.value = window.scrollY > 10
 }
 
+const handleMouseMove = (e: MouseEvent) => {
+    // Show if mouse is near top (allowance 80px)
+    if (e.clientY < 80) {
+        isVisible.value = true;
+    } else {
+        // If not near top and scrolled down, hide
+        if (window.scrollY > 50) {
+            isVisible.value = false;
+        } else {
+            // If at top of page, always show
+            isVisible.value = true;
+        }
+    }
+}
+
 onMounted(() => {
   window.addEventListener('scroll', handleScroll)
+  window.addEventListener('mousemove', handleMouseMove)
 })
 
 onUnmounted(() => {
   window.removeEventListener('scroll', handleScroll)
+  window.removeEventListener('mousemove', handleMouseMove)
 })
 </script>
 
@@ -89,13 +108,18 @@ onUnmounted(() => {
   left: 0;
   width: 100%;
   height: 64px; /* h-16 */
-  z-index: 50;
+  z-index: 2000; /* High z-index to ensure visibility over Map layers */
   background-color: rgba(0, 0, 0, 0.8); /* bg-black/80 */
   backdrop-filter: blur(12px); /* backdrop-blur-md */
   border-bottom: 1px solid rgba(255, 255, 255, 0.1); /* border-white/10 */
   display: flex;
   align-items: center;
-  transition: all 0.3s ease;
+  transition: transform 0.3s ease, background 0.3s;
+  transform: translateY(-100%); /* Default Hidden */
+  
+  &.navbar-visible {
+      transform: translateY(0);
+  }
 }
 
 .navbar-container {
