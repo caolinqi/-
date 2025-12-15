@@ -204,23 +204,25 @@ import { computed } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import { StarOutlined, StarFilled, EnvironmentOutlined } from "@ant-design/icons-vue";
 import { useBuildingStore } from "@/stores/useBuildingStore";
+import { useUserStore } from "@/stores/useUserStore";
 import { useLocalized } from "@/composables/useLocalized";
 
 const route = useRoute();
 const router = useRouter();
 const store = useBuildingStore();
+const userStore = useUserStore(); // Use UserStore for favorites
 const { getLocalized, getLocalizedTag } = useLocalized();
 
 const buildingId = computed(() => parseInt(route.params.id as string));
 const building = computed(() => store.getBuildingById(buildingId.value));
-const isFavorite = computed(() => store.isFavorite(buildingId.value));
+const isFavorite = computed(() => userStore.favorites.includes(buildingId.value)); // Use userStore
 
 const hasPrev = computed(() => store.getBuildingById(buildingId.value - 1));
 const hasNext = computed(() => store.getBuildingById(buildingId.value + 1));
 
 const padZero = (num: number) => num.toString().padStart(3, '0');
 
-const toggleFavorite = () => store.toggleFavorite(buildingId.value);
+const toggleFavorite = () => userStore.toggleFavorite(buildingId.value); // Use userStore
 const goToMap = () => router.push("/map");
 
 const goToArchitect = () => {

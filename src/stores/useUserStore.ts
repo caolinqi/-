@@ -1,5 +1,6 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
+import api from '@/api'
 
 export interface UserActivity {
     id: string;
@@ -23,95 +24,45 @@ export const useUserStore = defineStore('user', () => {
     const isLoading = ref(false)
     const recentActivities = ref<UserActivity[]>([])
 
-    // Internal Mock DB
-    const registeredUsers = ref<{ username: string, password: string, avatarId: string, bio: string }[]>([])
-
-    // Load registered users from local storage on init
-    const loadRegisteredUsers = () => {
-        const data = localStorage.getItem('arch_registered_users')
-        if (data) {
-            try { registeredUsers.value = JSON.parse(data) } catch (e) { }
-        }
-    }
-    const saveRegisteredUsers = () => localStorage.setItem('arch_registered_users', JSON.stringify(registeredUsers.value))
+    // Internal Mock DB - REMOVED (Moved to API layer)
+    // const registeredUsers = ref(...) 
 
     // Actions
     const register = async (username: string, password: string): Promise<void> => {
         isLoading.value = true
-        return new Promise((resolve, reject) => {
-            setTimeout(() => {
-                isLoading.value = false
-
-                if (registeredUsers.value.find(u => u.username === username)) {
-                    reject(new Error('User already exists'))
-                    return
-                }
-
-                // Register new user
-                const newUser = {
-                    username,
-                    password,
-                    avatarId: '1',
-                    bio: 'New architect in the void.'
-                }
-                registeredUsers.value.push(newUser)
-                saveRegisteredUsers()
-
-                // Auto login
-                login(username, password)
-                resolve()
-            }, 1000)
-        })
+        try {
+            await api.auth.register(username, password)
+            // Auto login after register
+            await login(username, password)
+        } catch (error: any) {
+            throw new Error(error.message || 'Registration failed')
+        } finally {
+            isLoading.value = false
+        }
     }
 
     const login = async (username: string, password: string): Promise<void> => {
         isLoading.value = true
-        return new Promise((resolve, reject) => {
-            setTimeout(() => {
-                isLoading.value = false
+        try {
+            const res = await api.auth.login(username, password)
+            if (res.code === 200 && res.data) {
+                user.value = res.data
+                token.value = res.data.token
+                isLoggedIn.value = true
 
-                let foundUser: UserProfile | null = null;
-
-                // 1. Default Admin Check
-                if (username === 'admin' && password === '123456') {
-                    foundUser = {
-                        username: 'admin',
-                        avatar: 'https://api.dicebear.com/7.x/identicon/svg?seed=admin',
-                        avatarId: 'admin',
-                        bio: 'System Administrator'
-                    }
+                // Initialize activities if empty
+                if (recentActivities.value.length === 0) {
+                    recentActivities.value = [
+                        { id: 'init_1', action: 'SYSTEM_INIT', target: 'Arch-OS v2.0', timestamp: new Date().toLocaleString() }
+                    ]
                 }
-                // 2. Mock Registered Check
-                else {
-                    const reg = registeredUsers.value.find(u => u.username === username && u.password === password)
-                    if (reg) {
-                        foundUser = {
-                            username: reg.username,
-                            avatar: `https://api.dicebear.com/7.x/identicon/svg?seed=${reg.username}`, // Use username as seed base or ID
-                            avatarId: reg.avatarId,
-                            bio: reg.bio
-                        }
-                    }
-                }
-
-                if (foundUser) {
-                    token.value = 'mock-token-' + Date.now()
-                    user.value = foundUser
-                    isLoggedIn.value = true
-
-                    // Load mock activities if empty
-                    if (recentActivities.value.length === 0) {
-                        recentActivities.value = [
-                            { id: 'init_1', action: 'SYSTEM_INIT', target: 'Arch-OS v2.0', timestamp: new Date().toLocaleString() }
-                        ]
-                    }
-                    saveSession()
-                    resolve()
-                } else {
-                    reject(new Error('Invalid credentials'))
-                }
-            }, 1000)
-        })
+                saveSession()
+            }
+        } catch (error: any) {
+            throw new Error(error.message || 'Login failed')
+        } finally {
+            isLoading.value = false
+        }
     }
 
     const logout = () => {
@@ -122,74 +73,48 @@ export const useUserStore = defineStore('user', () => {
         localStorage.removeItem('arch_user_session')
     }
 
-    const updateProfile = (data: { name?: string, bio?: string, avatarId?: string | number, avatar?: string }) => {
+    const updateProfile = async (data: { name?: string, bio?: string, avatarId?: string | number, avatar?: string }) => {
         if (!user.value) return
 
-        if (data.name) user.value.username = data.name
-        if (data.bio) user.value.bio = data.bio
-        if (data.avatarId) user.value.avatarId = data.avatarId
+        try {
+            // Call API
+            await api.auth.updateProfile({
+                name: data.name,
+                bio: data.bio,
+                avatarId: data.avatarId?.toString(),
+                avatar: data.avatar
+            })
 
-        // If direct avatar string provided (e.g. Base64), use it
-        if (data.avatar) {
-            user.value.avatar = data.avatar
-        }
-        // Else if avatarId changed/exists, regenerate Dicebear URL
-        else if (data.avatarId || user.value.username) {
-            const seed = data.avatarId || user.value.username
-            user.value.avatar = `https://api.dicebear.com/7.x/identicon/svg?seed=${seed}`
-        }
+            // Update local state on success
+            if (data.name) user.value.username = data.name
+            if (data.bio) user.value.bio = data.bio
+            if (data.avatarId) user.value.avatarId = data.avatarId
 
-        // Update in registeredUsers list if applicable
-        const regIndex = registeredUsers.value.findIndex(u => u.username === user.value?.username)
-        if (regIndex >= 0 && user.value) {
-            registeredUsers.value[regIndex].bio = user.value.bio || ''
-            registeredUsers.value[regIndex].avatarId = String(user.value.avatarId || '1')
-            // Save custom avatar if just set
             if (data.avatar) {
-                (registeredUsers.value[regIndex] as any).avatar = user.value.avatar
+                user.value.avatar = data.avatar
+            } else if (data.avatarId || user.value.username) {
+                // If we didn't provide a direct avatar string, regenerate specific URL
+                const seed = data.avatarId || user.value.username
+                user.value.avatar = `https://api.dicebear.com/7.x/identicon/svg?seed=${seed}`
             }
-            saveRegisteredUsers()
+            saveSession()
+        } catch (e: any) {
+            console.error('Update profile failed', e)
+            throw e
         }
-
-        saveSession()
     }
 
     const changePassword = async (oldPw: string, newPw: string): Promise<void> => {
+        if (!user.value) return
         isLoading.value = true
-        return new Promise((resolve, reject) => {
-            setTimeout(() => {
-                isLoading.value = false
-
-                // Allow admin to always change? Or restrict default admin?
-                // Let's assume default admin password acts as "oldPw" check
-                if (user.value?.username === 'admin') {
-                    // For admin, we don't persist password change in this simple mock unless we want to
-                    // But user asked for "others need register", implying admin is fixed or special.
-                    // Let's just allow it for the session.
-                    if (oldPw === '123456') {
-                        logActivity('PASSWORD_UPDATE', 'SECURITY_OPS')
-                        resolve()
-                    } else {
-                        reject(new Error('Invalid old password'))
-                    }
-                    return;
-                }
-
-                const regIndex = registeredUsers.value.findIndex(u => u.username === user.value?.username)
-                if (regIndex >= 0) {
-                    if (registeredUsers.value[regIndex].password === oldPw) {
-                        registeredUsers.value[regIndex].password = newPw
-                        saveRegisteredUsers()
-                        logActivity('PASSWORD_UPDATE', 'SECURITY_OPS')
-                        resolve()
-                    } else {
-                        reject(new Error('Invalid old password'))
-                    }
-                } else {
-                    reject(new Error('User not found in registry'))
-                }
-            }, 1000)
-        })
+        try {
+            await api.auth.changePassword(user.value.username, oldPw, newPw)
+            logActivity('PASSWORD_UPDATE', 'SECURITY_OPS')
+        } catch (e: any) {
+            throw e
+        } finally {
+            isLoading.value = false
+        }
     }
 
     const logActivity = (action: string, target: string) => {
@@ -231,13 +156,13 @@ export const useUserStore = defineStore('user', () => {
                 logout()
             }
         }
-        loadRegisteredUsers()
     }
 
     // Favorites
     const favorites = ref<number[]>([])
 
-    const toggleFavorite = (id: number) => {
+    const toggleFavorite = async (id: number) => {
+        // Optimistic update
         const index = favorites.value.indexOf(id)
         if (index === -1) {
             favorites.value.push(id)
@@ -245,6 +170,14 @@ export const useUserStore = defineStore('user', () => {
             favorites.value.splice(index, 1)
         }
         saveSession()
+
+        // Sync with Backend
+        try {
+            await api.building.toggleFavorite(id)
+        } catch (e) {
+            // Rollback if failed? For now just log
+            console.error('Failed to sync favorite', e)
+        }
     }
 
     // Initialize

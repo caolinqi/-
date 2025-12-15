@@ -47,7 +47,7 @@ import { computed, h } from 'vue'
 import { useRouter } from 'vue-router'
 // import { useI18n } from 'vue-i18n' // Remove legacy usage if not needed for other things
 import { StarOutlined, StarFilled, UserOutlined, EnvironmentOutlined } from '@ant-design/icons-vue'
-import { useBuildingStore } from '@/stores/useBuildingStore'
+import { useUserStore } from '@/stores/useUserStore'
 import { useLocalized } from '@/composables/useLocalized'
 import type { Building } from '@/types'
 
@@ -57,11 +57,12 @@ interface Props {
 
 const props = defineProps<Props>()
 const router = useRouter()
-const store = useBuildingStore()
+// const store = useBuildingStore() // Not needed for favorites
+const userStore = useUserStore() // Use UserStore
 // const { locale } = useI18n() 
 const { getLocalized, getLocalizedTag } = useLocalized()
 
-const isFavorite = computed(() => store.isFavorite(props.building.id))
+const isFavorite = computed(() => userStore.favorites.includes(props.building.id))
 
 
 const handleClick = () => {
@@ -69,7 +70,7 @@ const handleClick = () => {
 }
 
 const handleFavorite = () => {
-  store.toggleFavorite(props.building.id)
+  userStore.toggleFavorite(props.building.id)
 }
 </script>
 
