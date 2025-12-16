@@ -107,7 +107,7 @@
 
     <!-- ADD/EDIT MODAL -->
     <a-modal
-      v-model:visible="isModalOpen"
+      v-model:open="isModalOpen"
       :title="isEditing ? $t('map.modalTitleUpdate') : $t('map.modalTitleNew')"
       :footer="null"
       width="500px"

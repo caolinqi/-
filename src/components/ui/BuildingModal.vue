@@ -68,11 +68,12 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import type { Building, Architect } from '@/types'
-import { architects } from '@/data/architects'
+import { useBuildingStore } from '@/stores/useBuildingStore'
 import { useLocalized } from '@/composables/useLocalized'
-
 import { useUserStore } from '@/stores/useUserStore'
 import { message } from 'ant-design-vue'
+
+const buildingStore = useBuildingStore()
 
 const props = defineProps<{
     isOpen: boolean
@@ -105,7 +106,7 @@ const handleToggleFavorite = () => {
 // Let's try to find by string match.
 const architectData = computed(() => {
     if (!props.building) return null
-    return architects.find(a => a.name === props.building?.architect || a.nameEn === props.building?.architectEn)
+    return buildingStore.architects.find(a => a.name === props.building?.architect || a.nameEn === props.building?.architectEn)
 })
 </script>
 
@@ -115,7 +116,10 @@ const architectData = computed(() => {
 
 .modal-backdrop {
     position: fixed;
-    inset: 0;
+    top: 80px; /* Respect Top Nav */
+    left: 0;
+    right: 0;
+    bottom: 0;
     background: rgba(0, 0, 0, 0.8);
     backdrop-filter: blur(5px);
     z-index: 1000;

@@ -59,6 +59,7 @@ export const useUserStore = defineStore('user', () => {
                     ]
                 }
                 saveSession()
+                fetchFavorites() // Sync favorites
             }
         } catch (error: any) {
             const msg = error.response?.data?.message || error.message || '登录失败'
@@ -73,6 +74,7 @@ export const useUserStore = defineStore('user', () => {
         token.value = null
         isLoggedIn.value = false
         recentActivities.value = []
+        favorites.value = [] // Clear favorites
         localStorage.removeItem('arch_user_session')
     }
 
@@ -139,6 +141,8 @@ export const useUserStore = defineStore('user', () => {
                 user: user.value,
                 isLoggedIn: isLoggedIn.value,
                 recentActivities: recentActivities.value,
+                // favorites: favorites.value // Don't save favorites strictly to local storage anymore? Or keep as cache?
+                // Keeping as cache is fine, but fetchFavorites will overwrite.
                 favorites: favorites.value
             }))
         }
@@ -154,6 +158,11 @@ export const useUserStore = defineStore('user', () => {
                 isLoggedIn.value = data.isLoggedIn || false
                 recentActivities.value = data.recentActivities || []
                 favorites.value = data.favorites || []
+
+                // Fetch latest from backend
+                if (token.value) {
+                    fetchFavorites()
+                }
             } catch (e) {
                 console.error('Failed to restore session', e)
                 logout()
@@ -164,23 +173,44 @@ export const useUserStore = defineStore('user', () => {
     // Favorites
     const favorites = ref<number[]>([])
 
+    const fetchFavorites = async () => {
+        if (!token.value) return
+        try {
+            const { getFavorites } = await import('@/api/favorite')
+            const res = await getFavorites()
+            if (res.code === 200 && res.data) {
+                favorites.value = res.data
+            }
+        } catch (e) {
+            console.error('Failed to fetch favorites', e)
+        }
+    }
+
     const toggleFavorite = async (id: number) => {
+        const { addFavorite, removeFavorite } = await import('@/api/favorite')
+
         // Optimistic update
         const index = favorites.value.indexOf(id)
-        if (index === -1) {
-            favorites.value.push(id)
-        } else {
-            favorites.value.splice(index, 1)
-        }
-        saveSession()
+        const isFav = index !== -1
 
-        // Sync with Backend
-        try {
-            await api.building.toggleFavorite(id)
-        } catch (e) {
-            // Rollback if failed? For now just log
-            console.error('Failed to sync favorite', e)
+        if (isFav) {
+            favorites.value.splice(index, 1)
+            try {
+                await removeFavorite(id)
+            } catch (e) {
+                favorites.value.push(id) // Rollback
+            }
+        } else {
+            favorites.value.push(id)
+            try {
+                await addFavorite(id)
+            } catch (e) {
+                const idx = favorites.value.indexOf(id)
+                if (idx !== -1) favorites.value.splice(idx, 1) // Rollback
+            }
         }
+        // Don't save to session/localStorage, rely on backend
+        // saveSession() 
     }
 
     // Initialize

@@ -106,13 +106,15 @@
 
 <script setup lang="ts">
 import { ref, computed, onUnmounted } from 'vue'
-import { architects } from '@/data/architects'
-import { buildings } from '@/data/buildings' 
+import { useBuildingStore } from '@/stores/useBuildingStore' 
 import { useGameStore } from '@/stores/useGameStore'
 import { message } from 'ant-design-vue'
 
 const emit = defineEmits(['close'])
 const gameStore = useGameStore()
+const buildingStore = useBuildingStore()
+const architects = buildingStore.architects
+const buildings = buildingStore.buildings
 
 // --- TYPES ---
 type GameState = 'START' | 'PLAYING' | 'END'

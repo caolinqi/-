@@ -1,79 +1,117 @@
 import { defineStore } from "pinia";
 import { ref, computed } from "vue";
 import type { Building, Architect, Quote } from "@/types";
-import { buildings as buildingsData } from "@/data/buildings";
-import { architects as architectsData } from "@/data/architects";
-import { quotes as quotesData } from "@/data/quotes";
+import { getBuildings } from "@/api/building";
+import { getArchitects } from "@/api/architect";
+import { getQuotes } from "@/api/quote";
+
+
+
 
 export const useBuildingStore = defineStore("building", () => {
   // 状态
-  const buildings = ref<Building[]>(buildingsData);
-  const architects = ref<Architect[]>(architectsData);
-  const quotes = ref<Quote[]>(quotesData);
+  const buildings = ref<Building[]>([]);
+  const architects = ref<Architect[]>([]);
+  const quotes = ref<Quote[]>([]);
   const favorites = ref<number[]>([]);
-  const userBuildings = ref<Building[]>([]); // New custom buildings
 
-  // 从localStorage加载收藏列表
-  const loadFavorites = () => {
-    const saved = localStorage.getItem("japanese-architecture-favorites");
-    if (saved) {
-      favorites.value = JSON.parse(saved);
+  // Actions
+  const fetchBuildings = async () => {
+    try {
+      const res = await getBuildings();
+      if (res.data) {
+        buildings.value = res.data;
+      }
+    } catch (error) {
+      console.error("Failed to fetch buildings:", error);
     }
+  }
 
-    // Load User Buildings
-    const savedBuildings = localStorage.getItem("japanese-architecture-user-buildings");
-    if (savedBuildings) {
-      userBuildings.value = JSON.parse(savedBuildings);
+  const fetchArchitects = async () => {
+    try {
+      const res = await getArchitects();
+      if (res.data) {
+        architects.value = res.data;
+      }
+    } catch (error) {
+      console.error("Failed to fetch architects:", error);
     }
-  };
+  }
 
-  // 保存收藏列表到localStorage
-  const saveFavorites = () => {
-    localStorage.setItem(
-      "japanese-architecture-favorites",
-      JSON.stringify(favorites.value)
-    );
-  };
+  const fetchQuotes = async () => {
+    try {
+      const res = await getQuotes();
+      if (res.data) {
+        quotes.value = res.data;
+      }
+    } catch (error) {
+      console.error("Failed to fetch quotes:", error);
+    }
+  }
 
   // 初始化
-  loadFavorites();
+  fetchBuildings();
+  fetchArchitects();
+  fetchQuotes();
+  // fetchFavorites(); // Managed by useUserStore
 
   // 计算属性
   const favoriteBuildings = computed(() => {
-    return buildings.value.filter((building) =>
-      favorites.value.includes(building.id)
-    );
+    // Only works if favorites state is kept here, but we are removing it.
+    // Actually, let's keep favorites as empty array or remove it.
+    // If other components use store.favoriteBuildings, they will break.
+    // Does Map use it? No.
+    // Does Timeline use it? Maybe. 
+    return [];
+  });
+
+  // Compatibility: "User Buildings" are those with category 'Custom' or specific tag
+  // This allows Map.vue to still filter layers if needed
+  const userBuildings = computed(() => {
+    return buildings.value.filter(b => b.category === 'Custom' || (b.tags && b.tags.includes('Custom')));
   });
 
   const buildingsByArchitect = computed(() => {
     return (architectId: number) => {
       const architect = architects.value.find((a) => a.id === architectId);
       if (!architect) return [];
+      // Handle both integer ID arrays and potentially relation objects if backend changes, but for now it's just IDs
+      // Backend 'buildings' is stored as JSON array of INTs.
       return buildings.value.filter((b) => architect.buildings.includes(b.id));
     };
   });
 
   const buildingsByYear = computed(() => {
-    // Merge static and user buildings
-    const all = [...buildings.value, ...userBuildings.value];
-    // Sort Descending (Newest First)
-    return all.sort((a, b) => b.year - a.year);
+    // buildings.value now contains ALL buildings (fetched from DB)
+    return [...buildings.value].sort((a, b) => b.year - a.year);
   });
 
   // 方法
-  const toggleFavorite = (buildingId: number) => {
-    const index = favorites.value.indexOf(buildingId);
-    if (index > -1) {
-      favorites.value.splice(index, 1);
-    } else {
-      favorites.value.push(buildingId);
-    }
-    saveFavorites();
-  };
+  // removed toggleFavorite to avoid confusion. Use useUserStore.
+  // const toggleFavorite = async (buildingId: number) => { // Moved to useUserStore
+  //   const isFav = favorites.value.includes(buildingId);
 
-  const isFavorite = (buildingId: number) => {
-    return favorites.value.includes(buildingId);
-  };
+  //   // Optimistic Update
+  //   if (isFav) {
+  //     favorites.value = favorites.value.filter(id => id !== buildingId);
+  //     try {
+  //       await removeFavorite(buildingId);
+  //     } catch (e) {
+  //       favorites.value.push(buildingId); // Rollback
+  //     }
+  //   } else {
+  //     favorites.value.push(buildingId);
+  //     try {
+  //       await addFavorite(buildingId);
+  //     } catch (e) {
+  //       favorites.value = favorites.value.filter(id => id !== buildingId); // Rollback
+  //     }
+  //   }
+  // };
+
+  // const isFavorite = (buildingId: number) => { // Moved to useUserStore
+  //   return favorites.value.includes(buildingId);
+  // };
 
   const getBuildingById = (id: number) => {
     return buildings.value.find((b) => b.id === id);
@@ -88,28 +126,46 @@ export const useBuildingStore = defineStore("building", () => {
     return quotes.value[randomIndex];
   };
 
-  const addBuilding = (newBuilding: Building) => {
-    // Assign a new negative ID to avoid collision with static IDs (assuming static are positive)
-    if (!newBuilding.id) {
-      newBuilding.id = -(Date.now());
-    }
-    userBuildings.value.push(newBuilding);
-    localStorage.setItem("japanese-architecture-user-buildings", JSON.stringify(userBuildings.value));
-  };
-
-  const updateBuilding = (updatedBuilding: Building) => {
-    const index = userBuildings.value.findIndex(b => b.id === updatedBuilding.id);
-    if (index !== -1) {
-      userBuildings.value[index] = updatedBuilding;
-      localStorage.setItem("japanese-architecture-user-buildings", JSON.stringify(userBuildings.value));
+  const addBuilding = async (newBuilding: Partial<Building>) => {
+    try {
+      const { createBuilding } = await import("@/api/building");
+      const res = await createBuilding(newBuilding);
+      if (res.code === 200 && res.data) {
+        buildings.value.push(res.data);
+        // Re-fetch to be safe? No, just push is faster.
+      }
+    } catch (e) {
+      console.error("Failed to create building", e);
     }
   };
 
-  const deleteBuilding = (id: number) => {
-    const index = userBuildings.value.findIndex(b => b.id === id);
-    if (index !== -1) {
-      userBuildings.value.splice(index, 1);
-      localStorage.setItem("japanese-architecture-user-buildings", JSON.stringify(userBuildings.value));
+  const updateBuilding = async (updatedBuilding: Building) => {
+    try {
+      const { updateBuilding } = await import("@/api/building");
+      const res = await updateBuilding(updatedBuilding.id, updatedBuilding);
+      if (res.code === 200 && res.data) {
+        const index = buildings.value.findIndex(b => b.id === updatedBuilding.id);
+        if (index !== -1) {
+          buildings.value[index] = res.data;
+        }
+      }
+    } catch (e) {
+      console.error("Failed to update building", e);
+    }
+  };
+
+  const deleteBuilding = async (id: number) => {
+    try {
+      const { deleteBuilding } = await import("@/api/building");
+      const res = await deleteBuilding(id);
+      if (res.code === 200) {
+        const index = buildings.value.findIndex(b => b.id === id);
+        if (index !== -1) {
+          buildings.value.splice(index, 1);
+        }
+      }
+    } catch (e) {
+      console.error("Failed to delete building", e);
     }
   };
 
@@ -118,11 +174,11 @@ export const useBuildingStore = defineStore("building", () => {
     architects,
     quotes,
     favorites,
+    fetchBuildings,
+    fetchArchitects,
     favoriteBuildings,
     buildingsByArchitect,
     buildingsByYear,
-    toggleFavorite,
-    isFavorite,
     getBuildingById,
     getArchitectById,
     getRandomQuote,

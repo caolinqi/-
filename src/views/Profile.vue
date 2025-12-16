@@ -70,10 +70,16 @@
           </div>
           
           <div class="vault-grid" v-if="favoriteItems.length > 0">
-              <div v-for="item in favoriteItems" :key="item.id" class="blueprint-item">
-                  <div class="bp-icon">📐</div>
-                  <div class="bp-id">ID-{{ item.id }}</div>
-                  <div class="bp-name">{{ item.name }}</div>
+              <div v-for="item in favoriteItems" :key="item.id" class="blueprint-item" @click="router.push(`/building/${item.id}`)">
+                  <div class="bp-img-wrapper" v-if="item.image">
+                      <img :src="item.image" loading="lazy" />
+                      <div class="bp-overlay"></div>
+                  </div>
+                  <div class="bp-content">
+                      <div class="bp-id">ID-{{ item.id }}</div>
+                      <div class="bp-name">{{ getLocalized(item, 'name') }}</div>
+                      <div class="bp-arch">{{ getLocalized(item, 'architect') }}</div>
+                  </div>
               </div>
           </div>
           <div v-else class="empty-vault">
@@ -187,24 +193,32 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, reactive } from 'vue'
+import { ref, computed, reactive, onMounted } from 'vue'
 import { useUserStore } from '@/stores/useUserStore'
 import { useGameStore } from '@/stores/useGameStore'
+import { useBuildingStore } from '@/stores/useBuildingStore'
 import { useRouter } from 'vue-router'
 import { message } from 'ant-design-vue'
-
-import { buildings } from '@/data/buildings'
-import { architects } from '@/data/architects'
+import { useLocalized } from '@/composables/useLocalized'
 
 const userStore = useUserStore()
 const gameStore = useGameStore()
+const buildingStore = useBuildingStore()
 const router = useRouter()
+const { getLocalized } = useLocalized()
+
+// Ensure data is loaded
+onMounted(() => {
+    // If stores are empty, they might fetch automatically, but good to ensure
+    // userStore handles its own fetch on init usually
+})
 
 // --- COMPUTED FEATURES ---
 
 // Dynamic Favorites
 const favoriteItems = computed(() => {
-    return buildings.filter(b => userStore.favorites.includes(b.id))
+    // Filter buildings that are in user's favorites list
+    return buildingStore.buildings.filter(b => userStore.favorites.includes(b.id))
 })
 
 // Time-based Greeting
@@ -217,11 +231,10 @@ const greetingMessage = computed(() => {
 
 // Daily Quote (Random)
 const dailyQuote = computed(() => {
-    // Determine a "random" index based on date so it persists for the day? 
-    // Or just random for fun on reload. Let's do random for variety.
-    const randomIndex = Math.floor(Math.random() * architects.length)
-    const architect = architects[randomIndex]
-    return `"${architect.bio}" — ${architect.name}` 
+    if (buildingStore.architects.length === 0) return "Architecture is frozen music."
+    const randomIndex = Math.floor(Math.random() * buildingStore.architects.length)
+    const architect = buildingStore.architects[randomIndex]
+    return `"${architect.bio}" — ${getLocalized(architect, 'name')}` 
 })
 
 // --- STATE ---
@@ -272,16 +285,20 @@ const handleFileChange = (event: Event) => {
 
 const closeEditModal = () => showEditModal.value = false
 
-const saveProfile = () => {
+const saveProfile = async () => {
     if(!editForm.name) return message.error('Name cannot be empty')
     
-    userStore.updateProfile({ 
-        name: editForm.name, 
-        bio: editForm.bio, 
-        avatar: editForm.avatar // Pass the base64 string if present
-    })
-    message.success('PROFILE UPDATED')
-    closeEditModal()
+    try {
+        await userStore.updateProfile({ 
+            name: editForm.name, 
+            bio: editForm.bio, 
+            avatar: editForm.avatar 
+        })
+        message.success('个人资料修改成功')
+        closeEditModal()
+    } catch (e: any) {
+        message.error(e.message || '修改失败')
+    }
 }
 
 const openPwModal = () => {
@@ -298,12 +315,12 @@ const savePassword = async () => {
     
     try {
         await userStore.changePassword(pwForm.old, pwForm.new)
-        message.success('PASSWORD UPDATED - PLEASE RELOGIN')
+        message.success('密码修改成功，请重新登录')
         closePwModal()
         // Force Logout
         handleLogout()
     } catch(e: any) {
-        message.error(e.message || 'UPDATE FAILED')
+        message.error(e.message || '修改失败')
     }
 }
 
@@ -523,7 +540,7 @@ const radarPoints = computed(() => {
 
 /* MIDDLE ROW */
 .vault-card {
-    height: 200px;
+    height: 280px;
     display: flex;
     flex-direction: column;
 }
@@ -547,22 +564,55 @@ const radarPoints = computed(() => {
 }
 
 .blueprint-item {
-    min-width: 140px;
-    height: 100px;
+    min-width: 160px;
+    height: 180px;
     background: #111;
     border: 1px solid #222;
-    padding: 15px;
+    display: flex;
+    flex-direction: column;
+    transition: all 0.2s;
+    cursor: pointer;
+    overflow: hidden;
+    position: relative;
+    
+    &:hover { 
+        border-color: #00ffcc; 
+        box-shadow: 0 0 15px rgba(0,255,204,0.1);
+        .bp-overlay { opacity: 0; }
+        .bp-img-wrapper img { transform: scale(1.1); }
+    }
+}
+
+.bp-img-wrapper {
+    width: 100%;
+    height: 100px;
+    position: relative;
+    overflow: hidden;
+    
+    img { width: 100%; height: 100%; object-fit: cover; transition: transform 0.5s; }
+    .bp-overlay { 
+        position: absolute; inset: 0; 
+        background: linear-gradient(to bottom, transparent 0%, rgba(0,0,0,0.8) 100%);
+        transition: opacity 0.3s;
+    }
+}
+
+.bp-content {
+    padding: 10px;
+    flex: 1;
     display: flex;
     flex-direction: column;
     justify-content: space-between;
-    transition: all 0.2s;
-    cursor: pointer;
-    
-    &:hover { border-color: #fff; background: #161616; }
-    
-    .bp-icon { font-size: 1.2rem; }
-    .bp-id { font-size: 0.7rem; color: #555; }
-    .bp-name { font-size: 0.9rem; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+}
+
+.bp-id { font-size: 0.6rem; color: #555; margin-bottom: 2px; }
+.bp-name { 
+    font-size: 0.8rem; font-weight: 700; color: #eee; 
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis; 
+}
+.bp-arch {
+    font-size: 0.7rem; color: #888;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
 
 .empty-vault {

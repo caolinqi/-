@@ -44,7 +44,7 @@
 
     <!-- ADD BUILDING MODAL (Ant Design) -->
     <a-modal
-      v-model:visible="isAddModalOpen"
+      v-model:open="isAddModalOpen"
       title="注册新建筑 / REGISTER NEW ARCHITECTURE"
       :footer="null"
       width="600px"

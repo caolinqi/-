@@ -1,7 +1,5 @@
-
-import { ref } from 'vue'
-import { architects } from '@/data/architects'
-import { buildings } from '@/data/buildings'
+import { ref, computed } from 'vue'
+import { useBuildingStore } from '@/stores/useBuildingStore'
 
 export interface ChatMessage {
     id: number
@@ -11,11 +9,14 @@ export interface ChatMessage {
     isError?: boolean
 }
 
-// Prepare System Context for Linking
-const archContext = architects.map(a => `- ${a.name} (ID: ${a.id})`).join('\n')
-const buildContext = buildings.map(b => `- ${b.name} (ID: ${b.id})`).join('\n')
+export function useDeepSeek() {
+    const buildingStore = useBuildingStore()
 
-const SYSTEM_PROMPT = `
+    // Prepare System Context for Linking (computed to be reactive to store changes)
+    const archContext = computed(() => buildingStore.architects.map(a => `- ${a.name} (ID: ${a.id})`).join('\n'))
+    const buildContext = computed(() => buildingStore.buildings.map(b => `- ${b.name} (ID: ${b.id})`).join('\n'))
+
+    const SYSTEM_PROMPT = computed(() => `
 You are ARCH-MIND, a Brutalist AI Architecture Tutor.
 Style: Concise, Technical, CLI Terminal format. 
 Language: Simplified Chinese (简体中文).
@@ -26,19 +27,18 @@ When mentioning the following entities, YOU MUST use Markdown links in this EXAC
 [Entity Name](/architect/ID) or [Entity Name](/building/ID)
 
 KNOWN ARCHITECTS:
-${archContext}
+${archContext.value}
 
 KNOWN BUILDINGS:
-${buildContext}
+${buildContext.value}
 
 Example Response:
 主题：安藤忠雄
 风格：批判性地域主义
 代表作：[光之教堂](/building/1) 利用光作为素材。
 参阅：[黑川纪章](/architect/17)。
-`
+`)
 
-export function useDeepSeek() {
     const messages = ref<ChatMessage[]>([])
     const isAiTyping = ref(false)
     let msgId = 0
@@ -98,7 +98,7 @@ export function useDeepSeek() {
 
         // 3. Prepare Payload
         const apiMessages = [
-            { role: 'system', content: SYSTEM_PROMPT },
+            { role: 'system', content: SYSTEM_PROMPT.value },
             ...messages.value.map(m => ({ role: m.role, content: m.content })).slice(-6) // Keep context context small
         ]
 
@@ -171,8 +171,8 @@ export function useDeepSeek() {
         const lines = [
             '系统初始化...',
             '加载建筑数据库...',
-            `索引 ${architects.length} 位建筑师`,
-            `索引 ${buildings.length} 座建筑`,
+            `索引 ${buildingStore.architects.length} 位建筑师`,
+            `索引 ${buildingStore.buildings.length} 座建筑`,
             'ARCH-MIND 已上线。',
             '等待输入 >'
         ]
