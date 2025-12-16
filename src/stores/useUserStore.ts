@@ -35,7 +35,8 @@ export const useUserStore = defineStore('user', () => {
             // Auto login after register
             await login(username, password)
         } catch (error: any) {
-            throw new Error(error.message || 'Registration failed')
+            const msg = error.response?.data?.message || error.message || '注册失败'
+            throw new Error(msg)
         } finally {
             isLoading.value = false
         }
@@ -46,7 +47,8 @@ export const useUserStore = defineStore('user', () => {
         try {
             const res = await api.auth.login(username, password)
             if (res.code === 200 && res.data) {
-                user.value = res.data
+                // Fix: Access nested 'user' object from API response
+                user.value = res.data.user
                 token.value = res.data.token
                 isLoggedIn.value = true
 
@@ -59,7 +61,8 @@ export const useUserStore = defineStore('user', () => {
                 saveSession()
             }
         } catch (error: any) {
-            throw new Error(error.message || 'Login failed')
+            const msg = error.response?.data?.message || error.message || '登录失败'
+            throw new Error(msg)
         } finally {
             isLoading.value = false
         }

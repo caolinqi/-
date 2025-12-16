@@ -34,6 +34,11 @@ export default defineConfig({
         target: 'https://api.moonshot.cn',
         changeOrigin: true,
         rewrite: (path) => path.replace(/^\/api\/kimi/, '')
+      },
+      '/api': {
+        target: 'http://127.0.0.1:3000',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/api/, '')
       }
     }
   }

@@ -11,7 +11,7 @@
               <div class="id-content">
                   <div class="avatar-frame">
                       <img v-if="userStore.user?.avatar" :src="userStore.user.avatar" class="avatar-img" />
-                      <div v-else class="avatar-placeholder">{{ userStore.user?.username.charAt(0) }}</div>
+                      <div v-else class="avatar-placeholder">{{ userStore.user?.username?.charAt(0) }}</div>
                   </div>
                   <div class="user-details">
                       <h1 class="username">{{ userStore.user?.username || 'UNKNOWN' }}</h1>

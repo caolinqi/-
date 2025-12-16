@@ -497,7 +497,7 @@ watch(filteredBuildings, () => {
 
 /* Drawer Content */
 .drawer-title { font-weight: 900; letter-spacing: -0.02em; }
-.drawer-content { display: flex; flex-direction: column; height: 100%; }
+.drawer-content { display: flex; flex-direction: column; height: 100%; padding: 20px; }
 .drawer-img { width: 100%; height: 200px; margin-bottom: 20px; img { width: 100%; height: 100%; object-fit: cover; filter: grayscale(100%); }}
 .drawer-info { padding-bottom: 20px; border-bottom: 1px solid #333; margin-bottom: 20px; }
 .drawer-name { font-size: 2rem; font-weight: 900; line-height: 1; margin-bottom: 10px; color: #fff; text-transform: uppercase; }

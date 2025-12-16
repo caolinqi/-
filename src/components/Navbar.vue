@@ -26,7 +26,7 @@
             <router-link to="/profile" class="avatar-circle-link">
                 <span class="avatar-circle">
                     <img v-if="userStore.user && userStore.user.avatar" :src="userStore.user.avatar" alt="User" />
-                    <span v-else>{{ userStore.user?.username.charAt(0) }}</span>
+                    <span v-else>{{ userStore.user?.username?.charAt(0) }}</span>
                 </span>
             </router-link>
             <span class="username">{{ userStore.user?.username }}</span>
