@@ -42,29 +42,30 @@ Example Response:
     const messages = ref<ChatMessage[]>([])
     const isAiTyping = ref(false)
     let msgId = 0
-    // Use Kimi API Key
-    const apiKey = import.meta.env.VITE_KIMI_API_KEY || ''
+
+    // API KEY LOGIC
+    // Prioritize LocalStorage (User entered) -> Env Var -> Empty
+    const getApiKey = () => localStorage.getItem('user_kimi_key') || import.meta.env.VITE_KIMI_API_KEY || ''
 
     // Fallback Data for when API is offline/402
     const FALLBACK_RESPONSES: Record<string, string> = {
-        'default': "连接状态：受限。\nAPI错误：402 (余额不足)。\n\n切换至本地缓存模式...\n请尝试查询：'安藤', '混凝土', '代谢派', '东京'",
-        'ando': "主题：安藤忠雄 (本地缓存)\n风格：批判性地域主义\n代表作：[住吉长屋](/archive/6)\n\n(API 配额耗尽 - 显示缓存条目)",
-        'concrete': "材料：清水混凝土 (Fair-faced Concrete)\n特性：平滑、冷峻、原始。\n大师：[勒·柯布西耶](/archive/4) 深刻影响了日本建筑。",
-        'metabolism': "运动：代谢派 (1960s)\n概念：生物生长、胶囊单元。\n代表人物：[黑川纪章](/architect/17)",
-        'tokyo': "地点：东京\n参阅：[东京塔](/archive/7) 或 [代代木体育馆](/archive/5)"
+        'default': "连接状态：受限。\n原因：未配置 API Key 或 余额不足 (402)。\n\n请点击左侧 '设置' 输入您的 Kimi API Key。\n\n[离线模式] 试着问：'安藤', '混凝土', '代谢派', '东京'",
+        'ando': "【离线缓存】\n主题：安藤忠雄\n风格：批判性地域主义\n代表作：[住吉长屋](/archive/6)\n\n(请配置 API Key 以获取实时解答)",
+        'concrete': "【离线缓存】\n材料：清水混凝土 (Fair-faced Concrete)\n特性：平滑、冷峻、原始。\n大师：[勒·柯布西耶](/archive/4) 深刻影响了日本建筑。",
+        'metabolism': "【离线缓存】\n运动：代谢派 (1960s)\n概念：生物生长、胶囊单元。\n代表人物：[黑川纪章](/architect/17)",
+        'tokyo': "【离线缓存】\n地点：东京\n参阅：[东京塔](/archive/7) 或 [代代木体育馆](/archive/5)"
     }
 
     // Helper: Simulated Typing Effect for "Streaming" feel
     const typeWriterEffect = async (fullText: string, messageRef: ChatMessage) => {
         isAiTyping.value = true
         messageRef.content = ''
-        // Faster typing for AI
         const chunkSize = 2
         const chars = fullText.split('')
 
         for (let i = 0; i < chars.length; i += chunkSize) {
             messageRef.content += chars.slice(i, i + chunkSize).join('')
-            await new Promise(r => setTimeout(r, 20)) // ~20ms delay
+            await new Promise(r => setTimeout(r, 20))
         }
 
         messageRef.isTyping = false
@@ -81,6 +82,8 @@ Example Response:
 
         isAiTyping.value = true
 
+        const apiKey = getApiKey()
+
         // 2. Check API Key
         if (!apiKey) {
             await new Promise(r => setTimeout(r, 1000))
@@ -92,26 +95,29 @@ Example Response:
                 isError: true
             }
             messages.value.push(errorMsg)
-            await typeWriterEffect("错误: 找不到 VITE_KIMI_API_KEY。\n请在 .env 文件中配置。\n系统正在切换到离线模式。", errorMsg)
+            await typeWriterEffect("⚠️ 未检测到 API Key。\n请点击左侧侧边栏底部的 [设置/KEY] 按钮，输入您的 Kimi API Key 即可激活我。\n(格式: sk-xxxxxxxx)", errorMsg)
             return
         }
 
         // 3. Prepare Payload
         const apiMessages = [
             { role: 'system', content: SYSTEM_PROMPT.value },
-            ...messages.value.map(m => ({ role: m.role, content: m.content })).slice(-6) // Keep context context small
+            ...messages.value.map(m => ({ role: m.role, content: m.content })).slice(-6)
         ]
 
         // 4. Create AI Message Placeholder
-        const aiMsg: ChatMessage = {
+        const tempMsg: ChatMessage = {
             id: ++msgId,
             role: 'assistant',
             content: '█',
             isTyping: true
         }
-        messages.value.push(aiMsg)
+        messages.value.push(tempMsg)
+        const aiMsg = messages.value[messages.value.length - 1] // Use Reactive Proxy
 
         try {
+            console.log('[DeepSeek] Sending Request...', { apiKey: apiKey ? 'Present' : 'Missing', model: 'moonshot-v1-8k' })
+
             // Using local proxy to avoid CORS (Kimi)
             const response = await fetch('/api/kimi/v1/chat/completions', {
                 method: 'POST',
@@ -127,12 +133,20 @@ Example Response:
                 })
             })
 
+            console.log('[DeepSeek] Response Status:', response.status)
+
             if (!response.ok) {
                 throw new Error(`API ERROR: ${response.status}`)
             }
 
             const data = await response.json()
-            const content = data.choices[0]?.message?.content || "DATA CORRUPTED."
+            console.log('[DeepSeek] Response Body:', data)
+
+            let content = data.choices?.[0]?.message?.content || "DATA CORRUPTED: No content in response."
+
+            // Clean Markdown Code Blocks
+            content = content.replace(/^```\n?/, '').replace(/```$/, '').trim()
+            if (content.startsWith('json')) content = content.replace(/^json\n?/, '') // Common artifact
 
             await typeWriterEffect(content, aiMsg)
 

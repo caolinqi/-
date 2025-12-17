@@ -112,30 +112,37 @@
           </div>
 
           <!-- 4. CHRONO SORT (1x1) -->
-          <div class="bento-card x1-y1 locked-module" style="animation-delay: 0.4s">
-              <div class="lock-overlay">
-                  <span>🔒 LV.5</span>
-              </div>
+          <div class="bento-card x1-y1 chrono-module" @click="openModule('chrono')" style="animation-delay: 0.4s">
               <div class="card-content centered">
                   <div class="icon-sm">⏳</div>
                   <div class="mod-title-xs">{{ $t('learning.modulesList.chrono.title') }}</div>
+                  <div class="status-tag">ACTIVE</div>
               </div>
           </div>
 
           <!-- 5. BLUEPRINT DECODER (1x1) -->
-          <div class="bento-card x1-y1 locked-module" style="animation-delay: 0.5s">
-               <div class="lock-overlay">
-                  <span>🔒 LV.10</span>
-              </div>
-              <div class="card-content centered">
+          <div class="bento-card x1-y1 blueprint-module" @click="openModule('blueprint')" style="animation-delay: 0.5s">
+               <div class="card-content centered">
                   <div class="icon-sm">📐</div>
                   <div class="mod-title-xs">{{ $t('learning.modulesList.blueprint.title') }}</div>
+                  <div class="status-tag">ACTIVE</div>
               </div>
           </div>
 
           <!-- 6. AI TUTOR (DEEPSEEK) (2x2) -->
-          <div class="bento-card x2-y2 ai-module" style="animation-delay: 0.6s">
-              <AITutorModule />
+          <div class="bento-card x2-y2 ai-launch-module" @click="openModule('ai')" style="animation-delay: 0.6s">
+              <div class="matrix-bg"></div>
+              <div class="card-content">
+                  <div class="card-top">
+                      <div class="module-id">AI_CORE</div>
+                      <div class="icon-lg">🤖</div>
+                  </div>
+                  <div class="card-btm">
+                      <h2 class="mod-title glitch-hover" data-text="AI TUTOR">AI TUTOR</h2>
+                      <p class="mod-desc">{{ locale === 'zh-CN' ? '接入 ARCH-MIND 神经网络' : 'Access ARCH-MIND Neural Net' }}</p>
+                      <button class="action-btn">CONNECT</button>
+                  </div>
+              </div>
           </div>
 
       </section>
@@ -150,6 +157,9 @@
                 <QuizModule v-if="activeModule === 'quiz'" @close="closeModule" />
                 <EyeModule v-if="activeModule === 'eye'" @close="closeModule" />
                 <PuzzleGame v-if="activeModule === 'puzzle'" @close="closeModule" />
+                <ChronoGame v-if="activeModule === 'chrono'" @close="closeModule" />
+                <BlueprintGame v-if="activeModule === 'blueprint'" @close="closeModule" />
+                <AITutorModule v-if="activeModule === 'ai'" />
             </div>
         </div>
     </Transition>
@@ -157,16 +167,19 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useGameStore } from '@/stores/useGameStore'
+import { useI18n } from 'vue-i18n'
 import QuizModule from '@/components/learning/QuizModule.vue'
 import PuzzleGame from '@/components/learning/PuzzleGame.vue'
 import EyeModule from '@/components/learning/EyeModule.vue'
 import AITutorModule from '@/components/learning/AITutorModule.vue'
-import gsap from 'gsap'
+import ChronoGame from '@/components/learning/ChronoGame.vue'
+import BlueprintGame from '@/components/learning/BlueprintGame.vue'
 
 // Use raw requestAnimationFrame for number ticker to avoid dependency issues if gsap not present
 const gameStore = useGameStore()
+const { locale } = useI18n()
 const activeModule = ref<string | null>(null)
 const displayedExp = ref(0)
 const radarProgress = ref(0)
@@ -607,6 +620,44 @@ const animatedPoints = computed(() => {
     }
 }
 
+.ai-launch-module {
+    background: #000;
+    border: 1px solid #00ff00;
+    
+    .matrix-bg {
+        position: absolute;
+        inset: 0;
+        background: linear-gradient(0deg, rgba(0,255,0,0.1) 0%, transparent 50%),
+                    repeating-linear-gradient(0deg, transparent 0, transparent 2px, rgba(0,255,0,0.1) 3px);
+        background-size: 100% 100%, 100% 4px;
+        opacity: 0.3;
+    }
+
+    .card-top {
+        display: flex; justify-content: space-between; align-items: flex-start;
+        .module-id { color: #00ff00; font-size: 0.7rem; border: 1px solid #00ff00; padding: 2px 6px; }
+        .icon-lg { font-size: 3rem; color: #00ff00; text-shadow: 0 0 10px #00ff00; }
+    }
+
+    .mod-title {
+        color: #00ff00; font-family: 'JetBrains Mono'; font-weight: 700; font-size: 2rem;
+        text-shadow: 0 0 5px rgba(0,255,0,0.5);
+        margin-bottom: 10px;
+    }
+    
+    .mod-desc { color: #008800; font-size: 0.8rem; font-family: 'JetBrains Mono'; }
+
+    .action-btn {
+        margin-top: 20px; background: #00ff00; color: #000; border: none; padding: 10px 20px;
+        font-weight: 700; font-family: 'JetBrains Mono'; letter-spacing: 1px; cursor: pointer;
+        opacity: 0; transform: translateY(10px); transition: all 0.3s;
+        
+        &:hover { box-shadow: 0 0 15px #00ff00; }
+    }
+
+    &:hover .action-btn { opacity: 1; transform: translateY(0); }
+}
+
 .locked-module {
     opacity: 0.6;
     cursor: not-allowed;
@@ -625,6 +676,20 @@ const animatedPoints = computed(() => {
     }
     .icon-sm { font-size: 2.5rem; margin-bottom: 10px; opacity: 0.3; }
     .mod-title-xs { font-size: 0.9rem; color: #444; font-weight: bold;}
+}
+
+.chrono-module, .blueprint-module {
+    background: #111;
+    border: 1px solid #333;
+    transition: 0.3s;
+    .icon-sm { font-size: 2.5rem; margin-bottom: 10px; color: #aaa; transition: 0.3s; }
+    .mod-title-xs { font-size: 0.9rem; color: #fff; font-weight: bold; letter-spacing: 1px; }
+    .status-tag { margin-top: 10px; font-size: 0.6rem; color: #00ffcc; border: 1px solid #00ffcc; padding: 2px 6px; }
+
+    &:hover {
+        border-color: #00ffcc;
+        .icon-sm { color: #00ffcc; transform: scale(1.1); }
+    }
 }
 
 
@@ -666,7 +731,7 @@ const animatedPoints = computed(() => {
 
 .win-close-btn {
     position: absolute;
-    top: 30px; right: 40px;
+    top: 50px; right: 5px;
     background: none;
     border: 1px solid #333;
     padding: 10px 20px;

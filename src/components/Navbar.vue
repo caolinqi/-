@@ -60,10 +60,10 @@ const navLinks = [
   { path: '/timeline', labelKey: 'nav.timeline' },
 
   { path: '/map', labelKey: 'nav.map' },
-  { path: '/lineage', labelKey: 'nav.lineage' },
+  { path: '/figures', labelKey: 'nav.figures' },
   { path: '/archive', labelKey: 'nav.archive' },
 
-  { path: '/dialogue', labelKey: 'nav.dialogue' },
+  { path: '/compare', labelKey: 'nav.compare' },
   { path: '/learning', labelKey: 'nav.learning' },
 
   // Statistics and Quiz removed

@@ -4,10 +4,10 @@ export default {
         timeline: '时间轴',
         architect: '建筑师',
         map: '地图',
-        lineage: '建筑谱系',
+        figures: '人物志',
         archive: '图纸档案',
         profile: '个人中心',
-        dialogue: '人机对话',
+        compare: '建筑对谈',
         learning: '学习中心',
         statistics: '数据统计',
         tours: '导览路线',
@@ -202,6 +202,7 @@ export default {
         viewResult: '查看结果',
         playAgain: '再玩一次',
         score: '得分',
+        complete: '挑战完成',
         correct: '正确',
         incorrect: '错误',
         accuracy: '正确率',
@@ -259,6 +260,13 @@ export default {
             Heisei: '平成'
         }
     },
+    compare: {
+        title: '建筑对谈',
+        analyze_btn: 'AI 深度对比',
+        analyzing: '分析中...',
+        impact: '影响力'
+    },
+
     dialogue: {
         metrics: {
             height: '高度',
@@ -273,7 +281,8 @@ export default {
             architect: '建筑师',
             material: '主要材质',
             height: '建筑高度',
-            location: '地理位置'
+            location: '地理位置',
+            style: '流派'
         }
     },
     profile: {

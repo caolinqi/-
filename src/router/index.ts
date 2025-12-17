@@ -28,16 +28,22 @@ const routes: RouteRecordRaw[] = [
     meta: { title: '地图' }
   },
   {
-    path: '/lineage',
-    name: 'Lineage',
+    path: '/figures',
+    name: 'Figures',
     component: () => import('@/views/Lineage.vue'),
-    meta: { title: '建筑师谱系' }
+    meta: { title: '人物志' }
   },
   {
     path: '/building/:id',
     name: 'BuildingDetail',
     component: () => import('@/views/BuildingDetail.vue'),
     meta: { title: '建筑详情' }
+  },
+  {
+    path: '/architect/:id',
+    name: 'ArchitectDetail',
+    component: () => import('@/views/ArchitectDetail.vue'),
+    meta: { title: '建筑师档案' }
   },
 
   {
@@ -47,10 +53,10 @@ const routes: RouteRecordRaw[] = [
     meta: { title: '档案室' }
   },
   {
-    path: '/dialogue',
-    name: 'Dialogue',
+    path: '/compare',
+    name: 'Compare',
     component: () => import('@/views/Dialogue.vue'),
-    meta: { title: '对话' }
+    meta: { title: '建筑对谈' }
   },
   {
     path: '/learning',
